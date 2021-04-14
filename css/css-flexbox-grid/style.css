@@ -1,0 +1,224 @@
+/* make everything border-box */
+html {
+  box-sizing: border-box;
+  /* font-size: 10px; */
+}
+*, 
+*:before, 
+*:after {
+  box-sizing: inherit;
+}
+
+*{
+  padding: 0;
+  margin: 0;
+}
+/* box-sizing done! */
+/* body {
+	font-family: Arial, Geneva, sans-serif;
+  background-color: rgba(215, 215, 215, 1);
+} */
+:root {
+  --cell-clr: rgba(195, 195, 195, 0.3);
+  --cell-clr-hvr: rgba(195, 195, 195, .6);
+  --cell-brder-clr: rgba(195, 195, 195, 1);
+  --gutter: 10px;
+}
+
+/* .wrapper {
+  max-width: 2900px;
+  width: 80%;
+  margin: 0 auto;
+  background-color: rgba(255, 255, 255, 1);
+  padding: 4rem;
+} */
+
+/* label {
+  display: block;
+  font-size: 1.75rem;
+  margin-bottom: .75rem;
+  font-weight: bold;
+}
+
+input {
+  display: block;
+  height: 1.5rem;
+  width: 1.5rem;  
+} */
+
+/* h1 {
+  font-size: 3.2rem;
+  margin-bottom: 1.4rem;
+}
+
+h2 {
+  font-size: 2.4rem;
+  margin-bottom: 1.3rem;  
+}
+
+h3 {
+  font-size: 1.8rem;
+  margin-bottom: 1.2rem;  
+}
+
+h4 {
+  font-size: 1.6rem;
+  margin-bottom: 1rem;  
+}
+
+h5 {
+  font-size: 1.2rem;
+  margin-bottom: .9rem;  
+}
+
+h6 {
+  font-size: 1.0rem;
+  margin-bottom: .8rem;    
+} */
+
+/* p {
+  font-size: 1.6rem;
+  margin-bottom: 1.2rem;
+} */
+
+.sp75 {
+  margin-bottom: 7.5rem;
+}
+
+.sp50 {
+  margin-bottom: 5rem;
+}
+
+.sp25 {
+  margin-bottom: 2.5rem;
+}
+
+.sp125 {
+  margin-bottom: 1.25rem;
+}
+
+hr {
+  border-top: 0 solid white;
+  border-bottom: 1px solid grey;
+  margin-bottom: 20px;
+}
+
+.card {
+  background-color: var(--cell-clr);
+  border: .1rem solid var(--cell-brder-clr);
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 15px;
+}
+
+.card::after{
+  font-size: 15px;
+}
+
+.card:hover {
+  background-color: var(--cell-clr-hvr);
+}
+
+.cont-1::after { content: '1'; }
+.cont-2::after { content: '1/2'; }
+.cont-3::after { content: '1/3'; }
+.cont-4::after { content: '1/4'; }
+.cont-6::after { content: '1/6'; }
+.cont-12::after { content: '1/12'; }
+
+/* Flex Grid Container and Item property shortcuts */
+
+.fcp-jc-s { justify-content: flex-start; }
+.fcp-jc-c { justify-content: center; }
+.fcp-jc-e { justify-content: flex-end; }
+
+/* GRID SYSTEM - MOBILE FIRST */
+
+.fc-row {
+  display: flex;
+  flex-flow: row wrap;
+}
+
+.fi-cell {
+  /* all flex items same length */
+  flex: 1;
+  margin-bottom: 1rem;
+}
+
+/* Defaults for Base Grid */
+
+.fc-col > .fi-cell { flex: 0 0 100%; }
+.fc-col-2 > .fi-cell { flex: 0 0 100%; }
+.fc-col-3 > .fi-cell { flex: 0 0 100%; }
+.fc-col-4 > .fi-cell { flex: 0 0 100%; }
+.fc-col-6 > .fi-cell { flex: 0 0 100%; }
+.fc-col-12 > .fi-cell { flex: 0 0 100%; }
+
+/* Defaults for one fixed column and auto other */
+.fc-col-1of12 > .fi-cell:first-of-type,
+.fc-col-1of6 > .fi-cell:first-of-type,
+.fc-col-1of4 > .fi-cell:first-of-type,
+.fc-col-1of3 > .fi-cell:first-of-type,
+.fc-col-1of2 > .fi-cell:first-of-type { flex: 0 0 100% }
+
+.fc-row-gutter {
+  /* for any row with columns that is not full, do a neg margin on the parent container shifting left over, this accomodates the first cell of any config, since they all have a padding left*/
+  margin-left: calc(-1 * var(--gutter));
+}
+
+.fc-row-gutter > .fi-cell {
+  /* if gutter is applied, put a padding on the left of the flex item - first item will make up the above neg margin */
+  padding-left: var(--gutter);
+}
+
+.fc-row-gutter.fc-row.nest > .fi-cell:first-of-type {
+  margin-right: 1rem;
+}
+
+/* if a row is nested, then  */
+
+@media (min-width: 480px){
+  /* Adjust Base Grid */
+  .fc-col-6 > .fi-cell { flex: 0 0 50%; }
+  .fc-col-12 > .fi-cell { flex: 0 0 25%; }
+  
+  .fc-col-1of12 > .fi-cell:first-of-type { flex: 0 0 50%}
+}
+
+@media (min-width: 768px){
+  /* Adjust Base Grid */  
+  .fc-col-4 > .fi-cell { flex: 0 0 50%; }
+  .fc-col-6 > .fi-cell { flex: 0 0 33.333%; }
+  .fc-col-12 > .fi-cell { flex: 0 0 16.6667%; }
+  
+  .fc-col-1of12 > .fi-cell:first-of-type { flex: 0 0 33.3333%}
+  .fc-col-1of6 > .fi-cell:first-of-type { flex: 0 0 50% }  
+  /* .fc-col-1of4 > .fi-cell:first-of-type { flex: 0 0 100% }  
+  .fc-col-1of3 > .fi-cell:first-of-type { flex: 0 0 100% }  
+  .fc-col-1of2 > .fi-cell:first-of-type { flex: 0 0 100% } */
+
+  
+}
+
+@media (min-width: 1200px){
+  /* Adjust Base Grid */
+  .fc-col-3 > .fi-cell { flex: 0 0 33.3333%; }
+  .fc-col-4 > .fi-cell { flex: 0 0 25%; }
+  .fc-col-6 > .fi-cell { flex: 0 0 16.6666%; }
+  .fc-col-12 > .fi-cell { flex: 0 0 8.3333%; }
+  
+  .fc-col-1of12 > .fi-cell:first-of-type { flex: 0 0 33.3333%}
+  .fc-col-1of6 > .fi-cell:first-of-type { flex: 0 0 33.3333% }  
+  .fc-col-1of4 > .fi-cell:first-of-type { flex: 0 0 25% }  
+  .fc-col-1of3 > .fi-cell:first-of-type { flex: 0 0 33.3333% }  
+  .fc-col-1of2 > .fi-cell:first-of-type { flex: 0 0 50% }
+}
+
+@media (min-width: 1439px){
+  /* Adjust Base Grid */  
+  .fc-col-2 > .fi-cell { flex: 0 0 50%; }
+  
+  .fc-col-1of12 > .fi-cell:first-of-type { flex: 0 0 8.3333%}
+  .fc-col-1of6 > .fi-cell:first-of-type { flex: 0 0 16.6666% }  
+  
+}
