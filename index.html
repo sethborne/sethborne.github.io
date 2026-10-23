@@ -1,22 +1,171 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
-    <title></title>
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1"
+      content="width=device-width, initial-scale=1.0"
     />
-    <link href="css/style.css" rel="stylesheet" />
+    <title>Seth Borne — GIS &amp; Web Developer | Web Engineer</title>
+    <meta
+      name="description"
+      content="Seth Borne. Web developer building spatial tools, data pipelines, and GIS applications."
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./css/styles.css" />
   </head>
   <body>
-    <h1>Test Github IO</h1>
-    <ul>
-      <li>1</li>
-      <li>2</li>
-      <li>3</li>
-      <li>4</li>
-      <li>5</li>
-    </ul>
+    <!-- NAV -->
+    <header class="nav" id="siteNav">
+      <div class="nav-inner">
+        <a href="#home" class="nav-name">Seth Borne</a>
+        <button
+          class="nav-toggle"
+          id="navToggle"
+          aria-label="Toggle menu"
+          aria-expanded="false"
+        >
+          <span></span><span></span><span></span>
+        </button>
+        <ul class="nav-links" id="navLinks">
+          <li><a href="#projects">Projects</a></li>
+          <li><a href="#skills">Skills</a></li>
+          <li><a href="#experience">Experience</a></li>
+          <li><a href="#visualization">Visualization</a></li>
+          <li><a href="#about">About</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </div>
+    </header>
+
+    <!-- HOME -->
+    <section class="hero" id="home">
+      <div class="container">
+        <div class="hero-inner">
+          <span class="hero-name">Seth Borne</span>
+          <h1>
+            Web developer<br />building
+            <span class="accent">spatial tools.</span>
+          </h1>
+          <p class="hero-sub">
+            I design and build the software around GIS data:
+            pipelines, review tools, and public-facing maps.
+            Background in Landscape architecture, significant eight
+            years of web dev, now GIS-certified.
+          </p>
+          <div class="hero-tags">
+            <span class="hero-tag">Node.js</span>
+            <span class="hero-tag">Python</span>
+            <span class="hero-tag">ArcGIS</span>
+            <span class="hero-tag">Experience Builder</span>
+            <span class="hero-tag">Survey123</span>
+          </div>
+          <div class="hero-cta">
+            <a href="#projects" class="btn btn-primary"
+              >View projects</a
+            >
+            <a href="#contact" class="btn btn-ghost">Get in touch</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROJECTS -->
+    <section class="section" id="projects">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow">Selected work</span>
+          <h2>Projects</h2>
+          <p>
+            GIS applications and data pipelines, plus earlier web
+            development work.
+          </p>
+        </div>
+
+        <div class="filter-bar" id="filterBar">
+          <button class="filter-btn active" data-filter="all">
+            All
+          </button>
+          <button class="filter-btn" data-filter="gis">GIS</button>
+          <button class="filter-btn" data-filter="web">
+            Web Dev
+          </button>
+          <button class="filter-btn" data-filter="other">
+            Other
+          </button>
+        </div>
+
+        <div class="project-grid" id="projectGrid">
+          <!-- FLAGSHIP: Capstone -->
+          <article
+            class="project-card is-flagship"
+            data-category="gis"
+          >
+            <div class="project-thumb">
+              Capstone screenshot — placeholder
+            </div>
+            <div class="project-body">
+              <span class="project-tag">GIS · Capstone</span>
+              <h3>
+                WA Textile Reuse &amp; Recycling Spatial Dataset
+              </h3>
+              <p>
+                Built a Survey123 → Experience Builder pipeline for
+                the Washington Department of Ecology, public-facing
+                once approved. Designed and built the data pipeline
+                behind it: multi-source ingestion, deduplication, and
+                a human-review QA tool, processing place records into
+                a clean, published dataset. 3rd place, WAGISA Data
+                Tells All competition.
+              </p>
+              <div class="project-stack">
+                <span class="stack-pill">Node.js</span>
+                <span class="stack-pill">ArcGIS Online</span>
+                <span class="stack-pill">Survey123</span>
+                <span class="stack-pill">Experience Builder</span>
+              </div>
+              <div class="project-links">
+                <a href="#" data-placeholder="storymap"
+                  >StoryMap walkthrough →</a
+                >
+                <a href="#" data-placeholder="ebapp"
+                  >Public map app →</a
+                >
+                <a href="#" data-placeholder="repo">GitHub repo →</a>
+              </div>
+              <span class="placeholder-note"
+                >links are placeholders, swap in when live</span
+              >
+            </div>
+          </article>
+
+          <!-- placeholder cards, to be filled with real items -->
+          <article class="project-card" data-category="web">
+            <div class="project-thumb">Project thumbnail</div>
+            <div class="project-body">
+              <span class="project-tag">Web Dev</span>
+              <h3>Project title</h3>
+              <p>Short description placeholder.</p>
+              <div class="project-links">
+                <a href="#">View →</a>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <script src="./js/script.js"></script>
   </body>
 </html>
