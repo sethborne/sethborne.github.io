@@ -1,0 +1,161 @@
+/* ===========================
+   Header (nav)
+   =========================== */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--nav-height);
+  display: flex;
+  align-items: center;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0);
+  border-bottom: 1px solid rgba(215, 215, 215, 0);
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+.nav.is-scrolled {
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(6px);
+}
+
+.nav-inner {
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: var(--ink);
+  letter-spacing: 0.01em;
+}
+
+
+.nav-links {
+  display: flex;
+  gap: 28px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-links a {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.nav-links a.is-active {
+  color: var(--accent);
+}
+
+/* Hover: name, links and toggle bars turn orange. Only on devices that
+   really hover, so a tap on a phone doesn't leave them stuck orange. */
+@media (hover: hover) {
+  .nav-name:hover,
+  .nav-links a:hover {
+    color: var(--accent);
+  }
+
+  .nav-toggle:hover span {
+    background: var(--accent);
+  }
+}
+
+.nav-toggle {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.nav-toggle span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--ink);
+  margin: 5px 0;
+  transition:
+    transform var(--motion-menu) ease,
+    opacity var(--motion-menu) ease;
+}
+
+/* Keyboard focus on the toggle: orange bars instead of an outline */
+.nav-toggle:focus-visible {
+  outline: none;
+}
+
+.nav-toggle:focus-visible span {
+  background: var(--accent);
+}
+
+/* Hamburger becomes an X while the menu is open. Bars are 2px tall with
+   5px margins, so their centers sit 7px apart. */
+.nav-toggle[aria-expanded='true'] span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.nav-toggle[aria-expanded='true'] span:nth-child(2) {
+  opacity: 0;
+}
+
+.nav-toggle[aria-expanded='true'] span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* ===========================
+   Mobile nav
+   =========================== */
+@media (max-width: 720px) {
+  .nav-links {
+    position: fixed;
+    top: var(--nav-height);
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    /* Right-aligned under the toggle. Right padding = page gutter (24px)
+       + toggle padding (8px), so text lines up with the bars. */
+    align-items: flex-end;
+    background: #fff;
+    padding: 10px 32px 20px 24px;
+    gap: 18px;
+    border-bottom: 1px solid var(--border);
+    /* Short drop + fade: never slides across the header bar */
+    opacity: 0;
+    transform: translateY(-8px);
+    /* Hidden menus shouldn't be reachable with Tab */
+    visibility: hidden;
+    /* Closing: ease-in starts slow, so the fade-out stays visible */
+    transition:
+      opacity var(--motion-menu) ease-in,
+      transform var(--motion-menu) ease-in,
+      visibility var(--motion-menu) ease-in;
+  }
+
+  .nav-links.open {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+    /* Opening: ease-out settles gently into place */
+    transition:
+      opacity var(--motion-menu) ease-out,
+      transform var(--motion-menu) ease-out,
+      visibility var(--motion-menu) ease-out;
+  }
+
+  .nav-toggle {
+    display: block;
+  }
+}
