@@ -1,7 +1,21 @@
 // Boot: wait until the first view is ready, then hide the first-load spinner.
 import {hideFirstLoad} from '../components/loader/loader.js';
-import {createRouter} from './router.js';
+import {createHeader} from '../components/header/header.js';
+import {createFooter} from '../components/footer/footer.js';
+import {createRouter, SECTIONS} from './router.js';
 import {loadContent, findNode, collectLeaves} from './content.js';
+import profile from '../content/profile.js';
+
+// Created in boot(); routes update its highlighted link.
+let header = null;
+
+// Mouse/touch clicks shouldn't leave focus on a link or button, or the
+// next key press (any key) draws a focus ring on it. Keyboard clicks
+// (Enter/Space) report detail 0, so keyboard users keep their place.
+document.addEventListener('click', (e) => {
+  if (e.detail === 0) return;
+  e.target.closest('a, button')?.blur();
+});
 
 // Never hold the spinner longer than this, even if something is slow.
 const TIMEOUT_MS = 5000;
@@ -24,6 +38,8 @@ const whenReady = () =>
 // Temporary until the page component exists: home and its sections are
 // static markup, so just scroll. Other views only log lookups for now.
 const showRoute = async (route) => {
+  header?.setRoute(route);
+
   if (route.view === 'home') {
     const target =
       route.section && document.getElementById(route.section);
@@ -61,6 +77,11 @@ const boot = async () => {
   // finishes first, then call hideFirstLoad(). catch the error
   try {
     // Set up the first view while the spinner still covers the page.
+    header = createHeader(document.getElementById('siteNav'), {
+      name: profile.name,
+      sections: SECTIONS,
+    });
+    createFooter(document.getElementById('siteFooter'), {profile});
     router.start();
     await Promise.race([whenReady(), delay(TIMEOUT_MS)]);
   } catch (err) {

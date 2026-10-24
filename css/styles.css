@@ -3,6 +3,8 @@
    =========================== */
 @import "./tokens.css";
 @import "../components/loader/loader.css";
+@import "../components/header/header.css";
+@import "../components/footer/footer.css";
 
 * {
   box-sizing: border-box;
@@ -44,8 +46,11 @@ a {
   text-decoration: none;
 }
 
-a:hover {
-  color: var(--accent-dim);
+/* Only on devices that really hover, so taps don't leave links stuck */
+@media (hover: hover) {
+  a:hover {
+    color: var(--accent-dim);
+  }
 }
 
 :focus-visible {
@@ -67,85 +72,6 @@ a:hover {
   color: var(--accent);
   display: block;
   margin-bottom: 10px;
-}
-
-/* ===========================
-   Nav
-   =========================== */
-.nav {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--nav-height);
-  display: flex;
-  align-items: center;
-  z-index: 100;
-  background: rgba(255, 255, 255, 0);
-  border-bottom: 1px solid rgba(215, 215, 215, 0);
-  transition: background 0.25s ease, border-color 0.25s ease;
-}
-
-.nav.is-scrolled {
-  background: rgba(255, 255, 255, 0.96);
-  border-bottom: 1px solid var(--border);
-  backdrop-filter: blur(6px);
-}
-
-.nav-inner {
-  width: 100%;
-  max-width: var(--max-width);
-  margin: 0 auto;
-  padding: 0 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.nav-name {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 1.05rem;
-  color: var(--ink);
-  letter-spacing: 0.01em;
-}
-
-.nav-links {
-  display: flex;
-  gap: 28px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.nav-links a {
-  font-family: var(--font-mono);
-  font-size: 0.82rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text);
-}
-
-.nav-links a.active,
-.nav-links a:hover {
-  color: var(--accent);
-}
-
-.nav-toggle {
-  display: none;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 8px;
-}
-
-.nav-toggle span {
-  display: block;
-  width: 22px;
-  height: 2px;
-  background: var(--ink);
-  margin: 5px 0;
-  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
 /* ===========================
@@ -437,31 +363,4 @@ a:hover {
   font-family: var(--font-mono);
   font-size: 0.68rem;
   color: var(--border);
-}
-
-/* ===========================
-   Mobile nav
-   =========================== */
-@media (max-width: 720px) {
-  .nav-links {
-    position: fixed;
-    top: var(--nav-height);
-    left: 0;
-    right: 0;
-    flex-direction: column;
-    background: #fff;
-    padding: 20px 24px;
-    gap: 18px;
-    border-bottom: 1px solid var(--border);
-    transform: translateY(-110%);
-    transition: transform 0.2s ease;
-  }
-
-  .nav-links.open {
-    transform: translateY(0);
-  }
-
-  .nav-toggle {
-    display: block;
-  }
 }

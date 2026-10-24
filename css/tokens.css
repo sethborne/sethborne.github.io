@@ -14,6 +14,9 @@
   --font-body: "Inter", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", "Courier New", monospace;
 
+  /* Motion: menu open/close and the hamburger-to-X share this */
+  --motion-menu: 0.4s;
+
   --nav-height: 64px;
   --max-width: 1080px;
 }
