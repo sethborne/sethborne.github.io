@@ -11,6 +11,14 @@
       name="description"
       content="Seth Borne. Web developer building spatial tools, data pipelines, and GIS applications."
     />
+    <!-- No JS: hide the first-load spinner (see components/loader/) -->
+    <noscript
+      ><style>
+        #loader {
+          display: none;
+        }
+      </style></noscript
+    >
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
@@ -26,6 +34,12 @@
     <link rel="stylesheet" href="./css/styles.css" />
   </head>
   <body>
+    <!-- FIRST-LOAD SPINNER: hidden by components/loader/loader.js -->
+    <div id="loader" class="loader" role="status" aria-live="polite">
+      <span class="loader-ring" aria-hidden="true"></span>
+      <span class="loader-text">Loading</span>
+    </div>
+
     <!-- NAV -->
     <header class="nav" id="siteNav">
       <div class="nav-inner">
@@ -166,6 +180,6 @@
       </div>
     </section>
 
-    <script src="./js/script.js"></script>
+    <script type="module" src="./js/app.js"></script>
   </body>
 </html>
