@@ -11,6 +11,11 @@
       name="description"
       content="Seth Borne. Web developer building spatial tools, data pipelines, and GIS applications."
     />
+    <link
+      rel="icon"
+      href="img/icon/favicon.ico"
+      type="image/x-icon"
+    />
     <!-- No JS: hide the first-load spinner (see components/loader/) -->
     <noscript
       ><style>
@@ -43,93 +48,34 @@
     <!-- HEADER: filled by components/header/header.js -->
     <header class="nav" id="siteNav"></header>
 
-    <!-- HERO: filled by components/hero/hero.js (id watched by the header) -->
-    <section class="hero" id="home"></section>
+    <!-- MAIN: app.js shows one view at a time, home or page -->
+    <main>
+      <!-- HOME VIEW: hero + sections, shown on #/ and section routes -->
+      <div id="homeView">
+        <!-- HERO: filled by components/hero/hero.js (id watched by the header) -->
+        <section class="hero" id="home"></section>
 
-    <!-- PROJECTS -->
-    <section class="section" id="projects">
-      <div class="container">
-        <div class="section-head">
-          <span class="eyebrow">Selected work</span>
-          <h2>Projects</h2>
-          <p>
-            GIS applications and data pipelines, plus earlier web
-            development work.
-          </p>
-        </div>
-
-        <div class="filter-bar" id="filterBar">
-          <button class="filter-btn active" data-filter="all">
-            All
-          </button>
-          <button class="filter-btn" data-filter="gis">GIS</button>
-          <button class="filter-btn" data-filter="web">
-            Web Dev
-          </button>
-          <button class="filter-btn" data-filter="other">
-            Other
-          </button>
-        </div>
-
-        <div class="project-grid" id="projectGrid">
-          <!-- FLAGSHIP: Capstone -->
-          <article
-            class="project-card is-flagship"
-            data-category="gis"
-          >
-            <div class="project-thumb">
-              Capstone screenshot — placeholder
-            </div>
-            <div class="project-body">
-              <span class="project-tag">GIS · Capstone</span>
-              <h3>
-                WA Textile Reuse &amp; Recycling Spatial Dataset
-              </h3>
+        <!-- PROJECTS -->
+        <section class="section" id="projects">
+          <div class="container">
+            <div class="section-head">
+              <span class="eyebrow">Selected work</span>
+              <h2>Projects</h2>
               <p>
-                Built a Survey123 → Experience Builder pipeline for
-                the Washington Department of Ecology, public-facing
-                once approved. Designed and built the data pipeline
-                behind it: multi-source ingestion, deduplication, and
-                a human-review QA tool, processing place records into
-                a clean, published dataset. 3rd place, WAGISA Data
-                Tells All competition.
+                GIS maps, applications and data pipelines, plus
+                visualization and web development work.
               </p>
-              <div class="project-stack">
-                <span class="stack-pill">Node.js</span>
-                <span class="stack-pill">ArcGIS Online</span>
-                <span class="stack-pill">Survey123</span>
-                <span class="stack-pill">Experience Builder</span>
-              </div>
-              <div class="project-links">
-                <a href="#" data-placeholder="storymap"
-                  >StoryMap walkthrough →</a
-                >
-                <a href="#" data-placeholder="ebapp"
-                  >Public map app →</a
-                >
-                <a href="#" data-placeholder="repo">GitHub repo →</a>
-              </div>
-              <span class="placeholder-note"
-                >links are placeholders, swap in when live</span
-              >
             </div>
-          </article>
 
-          <!-- placeholder cards, to be filled with real items -->
-          <article class="project-card" data-category="web">
-            <div class="project-thumb">Project thumbnail</div>
-            <div class="project-body">
-              <span class="project-tag">Web Dev</span>
-              <h3>Project title</h3>
-              <p>Short description placeholder.</p>
-              <div class="project-links">
-                <a href="#">View →</a>
-              </div>
-            </div>
-          </article>
-        </div>
+            <!-- Group cards: filled by app.js from content/site.js -->
+            <div id="projectGrid"></div>
+          </div>
+        </section>
       </div>
-    </section>
+
+      <!-- PAGE VIEW: filled by components/page/page.js on node routes -->
+      <div id="pageView" hidden></div>
+    </main>
 
     <!-- FOOTER: filled by components/footer/footer.js -->
     <footer class="footer" id="siteFooter"></footer>

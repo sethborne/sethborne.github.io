@@ -6,6 +6,9 @@
 @import "../components/header/header.css";
 @import "../components/footer/footer.css";
 @import "../components/hero/hero.css";
+@import "../components/card/card.css";
+@import "../components/breadcrumb/breadcrumb.css";
+@import "../components/page/page.css";
 
 * {
   box-sizing: border-box;
@@ -108,11 +111,42 @@ a {
   color: var(--ink);
 }
 
+/* Tag pills (cards, detail pages): a <ul class="pills"> of <li class="pill"> */
+.pills {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
 /* ===========================
    Section shell
    =========================== */
 .section {
   padding: 100px 0;
+}
+
+/* The last home section has only the footer below it, so a short one
+   can't scroll to the top: the browser stops early and the section
+   above shows. Section + footer = one full screen lets #/<section> land
+   with the footer resting at the bottom. --footer-height is measured by
+   footer.js (0 until then, which is just a little extra room).
+   svh = the small viewport height (mobile, toolbars showing); the vh
+   line is the fallback for older browsers. */
+#homeView > .section:last-child {
+  min-height: calc(100vh - var(--footer-height, 0px));
+  min-height: calc(100svh - var(--footer-height, 0px));
 }
 
 .section-soft {
@@ -172,131 +206,4 @@ a {
 .filter-btn .count {
   opacity: 0.6;
   margin-left: 4px;
-}
-
-/* ===========================
-   Project grid
-   =========================== */
-.project-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
-}
-
-.project-card {
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  overflow: hidden;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
-  opacity: 1;
-  transform: scale(1);
-}
-
-.project-card.is-hidden {
-  display: none;
-}
-
-.project-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 24px rgba(60, 63, 69, 0.1);
-}
-
-.project-card.is-flagship {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: 1.1fr 1fr;
-}
-
-@media (max-width: 720px) {
-  .project-card.is-flagship {
-    grid-template-columns: 1fr;
-  }
-}
-
-.project-thumb {
-  background: var(--bg-soft);
-  aspect-ratio: 16/10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--border);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.project-card.is-flagship .project-thumb {
-  aspect-ratio: auto;
-}
-
-.project-body {
-  padding: 22px;
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
-.project-tag {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--accent);
-  margin-bottom: 8px;
-}
-
-.project-body h3 {
-  font-size: 1.2rem;
-  margin-bottom: 10px;
-}
-
-.project-card.is-flagship .project-body h3 {
-  font-size: 1.6rem;
-}
-
-.project-body p {
-  font-size: 0.92rem;
-  color: var(--text);
-  flex: 1;
-}
-
-.project-links {
-  display: flex;
-  gap: 14px;
-  margin-top: 16px;
-  flex-wrap: wrap;
-}
-
-.project-links a {
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  letter-spacing: 0.02em;
-}
-
-.project-stack {
-  margin-top: 14px;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.stack-pill {
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  color: var(--text);
-  background: var(--bg-soft);
-  border: 1px solid var(--border);
-  padding: 3px 9px;
-  border-radius: 999px;
-}
-
-/* placeholder note for unwired links */
-.placeholder-note {
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  color: var(--border);
 }

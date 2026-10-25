@@ -21,4 +21,12 @@ export const createFooter = (root, {profile}) => {
       el('ul', {class: 'footer-links'}, links),
     ),
   );
+
+  // Publish the footer's height as --footer-height, so the last home
+  // section can fill exactly the rest of the screen (styles.css).
+  // ResizeObserver re-measures when the links wrap at narrow widths.
+  new ResizeObserver(([entry]) => {
+    const height = entry.borderBoxSize[0].blockSize;
+    document.documentElement.style.setProperty('--footer-height', `${height}px`);
+  }).observe(root);
 };
