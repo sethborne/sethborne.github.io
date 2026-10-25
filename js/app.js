@@ -3,8 +3,10 @@ import {hideFirstLoad} from '../components/loader/loader.js';
 import {createHeader} from '../components/header/header.js';
 import {createFooter} from '../components/footer/footer.js';
 import {createHero} from '../components/hero/hero.js';
+import {createCardGrid} from '../components/card/card.js';
+import {createPage} from '../components/page/page.js';
 import {createRouter, SECTIONS} from './router.js';
-import {loadContent, findNode, collectLeaves} from './content.js';
+import {loadContent, collectLeaves} from './content.js';
 import profile from '../content/profile.js';
 import heroContent from '../content/hero.js';
 
@@ -33,16 +35,39 @@ const contentReady = loadContent();
 const whenReady = (...extra) =>
   Promise.all([document.fonts.ready, contentReady, ...extra]);
 
-// Temporary until the page component exists: home and its sections are
-// static markup, so just scroll. Other views only log lookups for now.
+// Home Projects grid: one card per top-tier group.
+const renderProjects = async () => {
+  const tree = await contentReady;
+  const items = tree.children.map((node) => ({node, path: [node.id]}));
+  document.getElementById('projectGrid').replaceChildren(createCardGrid(items));
+};
+
+// One view shows at a time. Home is hidden, never rebuilt, so the
+// header's section observer keeps its elements.
+const homeView = document.getElementById('homeView');
+const pageView = document.getElementById('pageView');
+const SITE_TITLE = document.title;
+
+// Returns the scroll behavior to use: a jump if the view just changed
+// (smooth-scrolling through swapped content looks broken), otherwise
+// 'auto', which follows the CSS (smooth, or instant under reduced motion).
+const showView = (view) => {
+  const changed = view.hidden;
+  homeView.hidden = view !== homeView;
+  pageView.hidden = view !== pageView;
+  return changed ? 'instant' : 'auto';
+};
+
 const showRoute = async (route) => {
   header?.setRoute(route);
 
   if (route.view === 'home') {
+    const behavior = showView(homeView);
+    document.title = SITE_TITLE;
     const target =
       route.section && document.getElementById(route.section);
-    if (target) target.scrollIntoView();
-    else window.scrollTo(0, 0);
+    if (target) target.scrollIntoView({behavior});
+    else window.scrollTo({top: 0, behavior});
     return;
   }
 
@@ -56,13 +81,16 @@ const showRoute = async (route) => {
   }
 
   if (route.view === 'node') {
-    const node = findNode(tree, route.path);
-    console.info(
-      node
-        ? `Found: ${node.title}`
-        : `Not found: ${route.path.join('/')}`,
-    );
+    const {element, heading, title} = createPage({tree, path: route.path});
+    pageView.replaceChildren(element);
+    showView(pageView);
+    document.title = `${title} | ${profile.name}`;
+    // A new page starts at the top, and focus moves to its heading the
+    // way a real page load would, so screen readers announce it.
+    window.scrollTo({top: 0, behavior: 'instant'});
+    heading.focus({preventScroll: true});
   } else if (route.view === 'filter') {
+    // Filter mode comes with filterBar.js (PLAN: Next)
     const leaves = collectLeaves(tree);
     console.info(`Filter: ${leaves.length} leaves before filtering`, route.query);
   }
@@ -84,8 +112,9 @@ const boot = async () => {
       sections: SECTIONS,
     });
     createFooter(document.getElementById('siteFooter'), {profile});
+    const projects = renderProjects();
     router.start();
-    await Promise.race([whenReady(hero.ready), delay(TIMEOUT_MS)]);
+    await Promise.race([whenReady(hero.ready, projects), delay(TIMEOUT_MS)]);
   } catch (err) {
     console.warn(err);
   } finally {
