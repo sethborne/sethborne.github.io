@@ -10,7 +10,9 @@
   display: flex;
   align-items: center;
   z-index: 100;
-  background: rgba(255, 255, 255, 0);
+  /* Frosted at the top so it stays readable over the hero photo */
+  background: color-mix(in srgb, var(--bg) 15%, transparent);
+  backdrop-filter: blur(6px);
   border-bottom: 1px solid rgba(215, 215, 215, 0);
   transition: background 0.25s ease, border-color 0.25s ease;
 }

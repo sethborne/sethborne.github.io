@@ -2,9 +2,11 @@
 import {hideFirstLoad} from '../components/loader/loader.js';
 import {createHeader} from '../components/header/header.js';
 import {createFooter} from '../components/footer/footer.js';
+import {createHero} from '../components/hero/hero.js';
 import {createRouter, SECTIONS} from './router.js';
 import {loadContent, findNode, collectLeaves} from './content.js';
 import profile from '../content/profile.js';
+import heroContent from '../content/hero.js';
 
 // Created in boot(); routes update its highlighted link.
 let header = null;
@@ -27,13 +29,9 @@ const delay = (ms) =>
 const contentReady = loadContent();
 
 // Everything the first view needs before the spinner can go.
-// Later PLAN items add their steps to this list.
-const whenReady = () =>
-  Promise.all([
-    document.fonts.ready,
-    contentReady,
-    // heroImage.decode(),  hero: image decoded
-  ]);
+// Components created in boot() pass their own ready promises in.
+const whenReady = (...extra) =>
+  Promise.all([document.fonts.ready, contentReady, ...extra]);
 
 // Temporary until the page component exists: home and its sections are
 // static markup, so just scroll. Other views only log lookups for now.
@@ -77,13 +75,17 @@ const boot = async () => {
   // finishes first, then call hideFirstLoad(). catch the error
   try {
     // Set up the first view while the spinner still covers the page.
+    // Hero first: the header's highlighting watches the #home section.
+    const hero = createHero(document.getElementById('home'), {
+      hero: heroContent,
+    });
     header = createHeader(document.getElementById('siteNav'), {
       name: profile.name,
       sections: SECTIONS,
     });
     createFooter(document.getElementById('siteFooter'), {profile});
     router.start();
-    await Promise.race([whenReady(), delay(TIMEOUT_MS)]);
+    await Promise.race([whenReady(hero.ready), delay(TIMEOUT_MS)]);
   } catch (err) {
     console.warn(err);
   } finally {
