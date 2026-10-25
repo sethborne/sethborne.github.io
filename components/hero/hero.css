@@ -1,0 +1,106 @@
+/* ===========================
+   Hero
+   =========================== */
+.hero {
+  position: relative; /* anchors the photo layer */
+  overflow: hidden;
+  /* Full screen height. svh = height with mobile browser bars showing,
+     so phones don't cut off the bottom; vh is the fallback. */
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  padding-top: var(--nav-height);
+}
+
+/* Photo layer behind the text: image + white wash */
+.hero-media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.hero-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* crop to fill, like a background image */
+}
+
+.hero-wash {
+  position: absolute;
+  inset: 0;
+  background-color: var(--bg);
+  opacity: 65%;
+  /* TODO(human): white gradient over the photo so the dark text stays
+     readable. Strongest behind the text (left), lighter toward the right. */
+}
+
+/* Text sits above the photo layer */
+.hero > .container {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-inner {
+  max-width: 720px;
+}
+
+.hero-name {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin-bottom: 18px;
+  display: block;
+}
+
+.hero h1 {
+  font-size: clamp(2.4rem, 6vw, 4.2rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.hero h1 .accent {
+  color: var(--accent);
+}
+
+.hero-sub {
+  margin-top: 22px;
+  font-size: 1.1rem;
+  max-width: 540px;
+  color: var(--text);
+}
+
+.hero-tags {
+  margin-top: 32px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.hero-tag {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+}
+
+.hero-cta {
+  margin-top: 36px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Over the photo, light borders disappear: give tags and the ghost
+   button a frosted fill and a darker edge. */
+.hero-tag,
+.hero .btn-ghost {
+  background: color-mix(in srgb, var(--bg) 45%, transparent);
+  border-color: var(--text);
+}

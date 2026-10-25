@@ -5,6 +5,7 @@
 @import "../components/loader/loader.css";
 @import "../components/header/header.css";
 @import "../components/footer/footer.css";
+@import "../components/hero/hero.css";
 
 * {
   box-sizing: border-box;
@@ -72,71 +73,6 @@ a {
   color: var(--accent);
   display: block;
   margin-bottom: 10px;
-}
-
-/* ===========================
-   Hero
-   =========================== */
-.hero {
-  min-height: 92vh;
-  display: flex;
-  align-items: center;
-  padding-top: var(--nav-height);
-}
-
-.hero-inner {
-  max-width: 720px;
-}
-
-.hero-name {
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text);
-  margin-bottom: 18px;
-  display: block;
-}
-
-.hero h1 {
-  font-size: clamp(2.4rem, 6vw, 4.2rem);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.hero h1 .accent {
-  color: var(--accent);
-}
-
-.hero-sub {
-  margin-top: 22px;
-  font-size: 1.1rem;
-  max-width: 540px;
-  color: var(--text);
-}
-
-.hero-tags {
-  margin-top: 32px;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.hero-tag {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.03em;
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  color: var(--text);
-}
-
-.hero-cta {
-  margin-top: 36px;
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
 }
 
 .btn {
