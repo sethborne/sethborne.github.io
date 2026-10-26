@@ -53,6 +53,11 @@
   letter-spacing: 0.05em;
 }
 
+/* Pending demo: no button to dodge, so center the text */
+.embed-frame:not(:has(.embed-load)) .embed-placeholder {
+  align-items: center;
+}
+
 .embed-iframe {
   display: block;
   border: 0;

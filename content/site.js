@@ -59,6 +59,11 @@ const group = (id, title, children, more = {}) => ({
 
 const leaf = (id, title, tags, more = {}) => ({id, title, tags, ...more});
 
+// Stand-in for a live app URL that isn't public yet: the page shows
+// "Live demo coming soon" instead of a Load button. Swap it for the
+// app's share URL (a plain string) once it's shared Everyone.
+const pending = (placeholder) => ({placeholder});
+
 // Tag sets shared by several leaves
 const EB_APP = [TOOL_EXPERIENCE_BUILDER, TOOL_ARCGIS_ONLINE];
 // Deduper, Tracker: front-end tools; Node.js only wrote the JSON cache
@@ -124,12 +129,22 @@ export default group('index', 'Seth Borne', [
           'The form behind both apps. Entries publish automatically, as ' +
           "the client asked, and a built-in 'pending approval' status " +
           'supports a review-first workflow instead.',
+        content: {
+          embed: pending('survey123'),
+          tryThis: 'Fill in the form with made-up details and submit it.',
+        },
       }),
       leaf('eb-external', 'Experience Builder: public app', [...EB_APP, TYPE_WEB_APP], {
         summary:
           'Public map with a pin for each survey submission, updated as ' +
           'new entries arrive. Click a pin to see the details from that ' +
           'submission.',
+        content: {
+          embed: pending('eb-external'),
+          tryThis:
+            'Submit a test entry in the Survey123 form, then find your ' +
+            'pin here.',
+        },
       }),
       leaf(
         'eb-internal',
@@ -140,6 +155,12 @@ export default group('index', 'Seth Borne', [
             'Staff app for revising and managing entries shown on the ' +
             'public map. Since entries publish automatically, corrections ' +
             'happen here after they go live.',
+          content: {
+            embed: pending('eb-internal'),
+            tryThis:
+              'Open an entry, change a field and save it. The public map ' +
+              'shows the edit.',
+          },
         },
       ),
     ],
