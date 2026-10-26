@@ -36,12 +36,12 @@
 // - tags: TOOL_ / TYPE_ constants imported from tags.js, in any order.
 // - The exported tree must be plain data (no functions inside it), so
 //   JSON.stringify can turn it into JSON if a tool ever needs that.
-//
-// Skeleton with placeholder tags until feature/site-content.
+// - Copy is a draft: comments marked [?] are facts still to confirm.
 
 import {
   TOOL_ARCGIS_ONLINE,
   TOOL_EXPERIENCE_BUILDER,
+  TOOL_JAVASCRIPT,
   TOOL_NODE_JS,
   TOOL_SURVEY123,
   TYPE_DATA_PIPELINE,
@@ -61,32 +61,95 @@ const leaf = (id, title, tags, more = {}) => ({id, title, tags, ...more});
 
 // Tag sets shared by several leaves
 const EB_APP = [TOOL_EXPERIENCE_BUILDER, TOOL_ARCGIS_ONLINE];
+// Deduper, Tracker: front-end tools; Node.js only wrote the JSON cache
+const LOCAL_APP = [TOOL_JAVASCRIPT, TOOL_NODE_JS];
+
+// A card's eyebrow is the leaf's first type, so list the main type first.
 
 export default group('index', 'Seth Borne', [
-  group('capstone', 'WA Textile Reuse', [
-    leaf('public-app', 'Public app', [
-      TOOL_SURVEY123,
-      ...EB_APP,
-      TYPE_WEB_APP,
-    ]),
-    group('data-pipeline', 'Data pipeline', [
-      leaf('deduper', 'Deduper', [TOOL_NODE_JS, TYPE_DATA_PIPELINE]),
-      leaf('tracker', 'Tracker', [TOOL_NODE_JS, TYPE_REVIEW_TOOL]),
-    ]),
-  ]),
-  group('survey-map', 'Survey Map', [
-    leaf('survey123', 'Survey123 form', [
-      TOOL_SURVEY123,
-      TOOL_ARCGIS_ONLINE,
-      TYPE_FORM,
-    ]),
-    leaf('eb-external', 'Experience Builder: public app', [
-      ...EB_APP,
-      TYPE_WEB_APP,
-    ]),
-    leaf('eb-internal', 'Experience Builder: internal app', [
-      ...EB_APP,
-      TYPE_WEB_APP,
-    ]),
-  ]),
+  group(
+    'capstone',
+    'WA textile reuse dataset',
+    [
+      leaf('public-app', 'Public app', [TOOL_SURVEY123, ...EB_APP, TYPE_WEB_APP], {
+        summary:
+          'Public Experience Builder map of the dataset, with a Survey123 ' +
+          'form for new sites. Live once DoE approves it.',
+      }),
+      group(
+        'data-pipeline',
+        'Data pipeline',
+        [
+          // [?] Is there also a "keep both" choice? Add it if so.
+          leaf('deduper', 'Deduper', [...LOCAL_APP, TYPE_DATA_PIPELINE], {
+            summary:
+              'Browser tool that shows likely duplicate place records side ' +
+              'by side. A reviewer keeps one or removes both, and a small ' +
+              'Node.js script saved each decision to a JSON cache.',
+          }),
+          leaf(
+            'tracker',
+            'Tracker',
+            [...LOCAL_APP, TYPE_REVIEW_TOOL, TYPE_DATA_PIPELINE],
+            {
+              summary:
+                'Browser tool for reviewing records one by one and ' +
+                "tracking each one's QA status before publishing. A small " +
+                'Node.js script saved progress to a JSON cache.',
+            },
+          ),
+        ],
+        {
+          summary:
+            'The steps between raw place records and the published ' +
+            'dataset, with two browser tools for the parts that need a person.',
+        },
+      ),
+    ],
+    {
+      summary:
+        'A spatial dataset of textile reuse and recycling sites for the ' +
+        'Washington Department of Ecology. A data pipeline ingests place ' +
+        'records from several sources, removes duplicates and routes them ' +
+        'through human review, then publishes them with Survey123 and ' +
+        'Experience Builder. 3rd place, WAGISA Data Tells All.',
+    },
+  ),
+  group(
+    'survey-map',
+    'Survey Map',
+    [
+      leaf('survey123', 'Survey123 form', [TOOL_SURVEY123, TOOL_ARCGIS_ONLINE, TYPE_FORM], {
+        summary:
+          'The form behind both apps. Entries publish automatically, as ' +
+          "the client asked, and a built-in 'pending approval' status " +
+          'supports a review-first workflow instead.',
+      }),
+      leaf('eb-external', 'Experience Builder: public app', [...EB_APP, TYPE_WEB_APP], {
+        summary:
+          'Public map with a pin for each survey submission, updated as ' +
+          'new entries arrive. Click a pin to see the details from that ' +
+          'submission.',
+      }),
+      leaf(
+        'eb-internal',
+        'Experience Builder: internal app',
+        [...EB_APP, TYPE_WEB_APP, TYPE_REVIEW_TOOL],
+        {
+          summary:
+            'Staff app for revising and managing entries shown on the ' +
+            'public map. Since entries publish automatically, corrections ' +
+            'happen here after they go live.',
+        },
+      ),
+    ],
+    {
+      summary:
+        'A Survey123 form collecting contact details from people in the ' +
+        'secondary textile resale economy, focused on Washington State. ' +
+        'It feeds two Experience Builder apps: a public map of ' +
+        'submissions and a staff app for managing them. Demo mockups of ' +
+        'production work for the Washington Department of Ecology.',
+    },
+  ),
 ]);

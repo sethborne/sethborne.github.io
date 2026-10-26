@@ -1,7 +1,6 @@
 // Every tag a leaf in site.js may use. Each tag knows its own facet and
 // display label, so site.js lists tags flat: [TOOL_SURVEY123, TYPE_FORM].
 // Import them by name; a misspelled name fails loudly at load time.
-// Placeholder set until feature/site-content settles the real tags.
 //
 // Adding a tag: one export line here, then import it where it's used.
 // - Name: facet prefix (TOOL_ / TYPE_) + UPPER_SNAKE, so autocomplete
@@ -17,6 +16,7 @@ export const TOOL_EXPERIENCE_BUILDER = tool(
   'experience-builder',
   'Experience Builder',
 );
+export const TOOL_JAVASCRIPT = tool('javascript', 'JavaScript');
 export const TOOL_NODE_JS = tool('node-js', 'Node.js');
 export const TOOL_SURVEY123 = tool('survey123', 'Survey123');
 
