@@ -6,7 +6,8 @@
 import {el} from '../../js/dom.js';
 import {fallbackFor, srcsetFor} from '../../js/images.js';
 
-const renderFallback = (fallback) =>
+// emptyText fills the box when there's no screenshot yet
+const renderFallback = (fallback, emptyText) =>
   fallback
     ? el('img', {
         class: 'embed-fallback',
@@ -18,7 +19,7 @@ const renderFallback = (fallback) =>
         loading: 'lazy',
         decoding: 'async',
       })
-    : el('div', {class: 'embed-placeholder', 'aria-hidden': 'true'}, 'Screenshot coming');
+    : el('div', {class: 'embed-placeholder'}, emptyText);
 
 // No sandbox: Survey123 needs scripts, forms, popups and same-origin to
 // submit, and a sandbox would block them.
@@ -35,8 +36,10 @@ const renderIframe = (src, title) =>
 // Link text when content.openLabel isn't given. The ↗ is always added.
 const OPEN_LABEL = 'Open in new tab';
 
-// Takes a node's title plus its content fields. With no embed URL (not
-// live yet, or the license ended) it shows the fallback only.
+// Takes a node's title plus its content fields. embed is either
+//   'https://…'                   live: Load button + new-tab link
+//   {placeholder: 'eb-external'}  pending() in site.js: not public yet
+//   missing                       license ended: fallback only
 export const createEmbed = ({
   title,
   embed,
@@ -44,9 +47,14 @@ export const createEmbed = ({
   tryThis,
   openLabel = OPEN_LABEL,
 }) => {
-  const frame = el('div', {class: 'embed-frame'}, renderFallback(fallback));
+  const live = typeof embed === 'string';
+  const frame = el(
+    'div',
+    {class: 'embed-frame'},
+    renderFallback(fallback, live ? 'Screenshot coming' : 'Live demo coming soon'),
+  );
 
-  if (embed) {
+  if (live) {
     const button = el(
       'button',
       {class: 'btn btn-primary embed-load', type: 'button'},
@@ -63,13 +71,13 @@ export const createEmbed = ({
   }
 
   const caption =
-    (tryThis || embed) &&
+    (tryThis || live) &&
     el(
       'figcaption',
       {class: 'embed-caption'},
       tryThis &&
         el('p', {class: 'embed-try'}, el('strong', {}, 'Try this: '), tryThis),
-      embed &&
+      live &&
         el(
           'a',
           {class: 'embed-open', href: embed, target: '_blank', rel: 'noopener'},
@@ -79,5 +87,11 @@ export const createEmbed = ({
         ),
     );
 
-  return el('figure', {class: 'embed'}, frame, caption);
+  // data-placeholder marks it for swapping, like placeholder links
+  return el(
+    'figure',
+    {class: 'embed', 'data-placeholder': embed?.placeholder},
+    frame,
+    caption,
+  );
 };
