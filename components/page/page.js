@@ -1,10 +1,11 @@
 // Page view: renders any content node, found by its path.
-// Groups show their child cards; leaves show their tags (embed and
-// writeup come in later features). Returns {element, heading, title}.
+// Groups show their child cards; leaves show their tags and live demo
+// (writeup comes later). Returns {element, heading, title}.
 import {el} from '../../js/dom.js';
 import {findTrail, isLeaf} from '../../js/content.js';
 import {createBreadcrumb} from '../breadcrumb/breadcrumb.js';
 import {createCardGrid, labelFor} from '../card/card.js';
+import {createEmbed} from '../embed/embed.js';
 
 // tabindex -1: app.js moves focus here after navigation, like a real
 // page load, without adding the heading to the Tab order.
@@ -39,6 +40,9 @@ export const createPage = ({tree, path}) => {
   const node = trail.at(-1);
   const h1 = heading(node.title);
   const labels = isLeaf(node) ? tagLabels(node.tags) : [];
+  // Something to show in the frame: a live URL, a screenshot, or both
+  const {embed, fallback} = node.content ?? {};
+  const demo = (embed || fallback) && createEmbed({title: node.title, ...node.content});
   const children = (node.children ?? []).map((child) => ({
     node: child,
     path: [...path, child.id],
@@ -59,6 +63,7 @@ export const createPage = ({tree, path}) => {
             labels.map((label) => el('li', {class: 'pill'}, label)),
           ),
       ),
+      demo,
       children.length > 0 && createCardGrid(children),
     ),
     heading: h1,

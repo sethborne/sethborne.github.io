@@ -1,0 +1,84 @@
+/* ===========================
+   Embed (live demo + fallback)
+   =========================== */
+.embed {
+  margin: 0 0 40px;
+}
+
+/* Fallback, button and iframe share one grid cell, so they stack;
+   later items sit on top. The fixed ratio keeps the space the same
+   before and after loading, so the page doesn't jump. */
+.embed-frame {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* Wider screens: wide, but still tall enough for an EB app */
+@media (min-width: 600px) {
+  .embed-frame {
+    aspect-ratio: 16 / 10;
+  }
+}
+
+.embed-frame > * {
+  grid-area: 1 / 1;
+}
+
+.embed-fallback,
+.embed-placeholder,
+.embed-iframe {
+  width: 100%;
+  height: 100%;
+}
+
+.embed-fallback {
+  object-fit: cover;
+}
+
+/* Text at the bottom, out of the way of the centered button */
+.embed-placeholder {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--border);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.embed-iframe {
+  display: block;
+  border: 0;
+}
+
+.embed-caption {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 24px;
+}
+
+.embed-try {
+  margin: 0;
+  font-size: 0.92rem;
+  max-width: 640px;
+}
+
+.embed-try strong {
+  color: var(--ink);
+}
+
+.embed-open {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+}
