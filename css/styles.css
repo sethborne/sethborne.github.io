@@ -3,6 +3,13 @@
    =========================== */
 @import "./tokens.css";
 @import "../components/loader/loader.css";
+@import "../components/header/header.css";
+@import "../components/footer/footer.css";
+@import "../components/hero/hero.css";
+@import "../components/card/card.css";
+@import "../components/breadcrumb/breadcrumb.css";
+@import "../components/page/page.css";
+@import "../components/embed/embed.css";
 
 * {
   box-sizing: border-box;
@@ -23,13 +30,25 @@ html {
   }
 }
 
+/* Sticky footer: the page is at least one screen tall and <main> takes
+   the spare height, so a short page (e.g. Not found) still has its
+   footer at the bottom. Header and loader are position: fixed, so they
+   sit outside this column. */
 body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100svh;
   margin: 0;
   font-family: var(--font-body);
   color: var(--text);
   background: var(--bg);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+}
+
+main {
+  flex: 1 0 auto;
 }
 
 h1, h2, h3, h4 {
@@ -44,8 +63,11 @@ a {
   text-decoration: none;
 }
 
-a:hover {
-  color: var(--accent-dim);
+/* Only on devices that really hover, so taps don't leave links stuck */
+@media (hover: hover) {
+  a:hover {
+    color: var(--accent-dim);
+  }
 }
 
 :focus-visible {
@@ -67,150 +89,6 @@ a:hover {
   color: var(--accent);
   display: block;
   margin-bottom: 10px;
-}
-
-/* ===========================
-   Nav
-   =========================== */
-.nav {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--nav-height);
-  display: flex;
-  align-items: center;
-  z-index: 100;
-  background: rgba(255, 255, 255, 0);
-  border-bottom: 1px solid rgba(215, 215, 215, 0);
-  transition: background 0.25s ease, border-color 0.25s ease;
-}
-
-.nav.is-scrolled {
-  background: rgba(255, 255, 255, 0.96);
-  border-bottom: 1px solid var(--border);
-  backdrop-filter: blur(6px);
-}
-
-.nav-inner {
-  width: 100%;
-  max-width: var(--max-width);
-  margin: 0 auto;
-  padding: 0 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.nav-name {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 1.05rem;
-  color: var(--ink);
-  letter-spacing: 0.01em;
-}
-
-.nav-links {
-  display: flex;
-  gap: 28px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.nav-links a {
-  font-family: var(--font-mono);
-  font-size: 0.82rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text);
-}
-
-.nav-links a.active,
-.nav-links a:hover {
-  color: var(--accent);
-}
-
-.nav-toggle {
-  display: none;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 8px;
-}
-
-.nav-toggle span {
-  display: block;
-  width: 22px;
-  height: 2px;
-  background: var(--ink);
-  margin: 5px 0;
-  transition: transform 0.2s ease, opacity 0.2s ease;
-}
-
-/* ===========================
-   Hero
-   =========================== */
-.hero {
-  min-height: 92vh;
-  display: flex;
-  align-items: center;
-  padding-top: var(--nav-height);
-}
-
-.hero-inner {
-  max-width: 720px;
-}
-
-.hero-name {
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text);
-  margin-bottom: 18px;
-  display: block;
-}
-
-.hero h1 {
-  font-size: clamp(2.4rem, 6vw, 4.2rem);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.hero h1 .accent {
-  color: var(--accent);
-}
-
-.hero-sub {
-  margin-top: 22px;
-  font-size: 1.1rem;
-  max-width: 540px;
-  color: var(--text);
-}
-
-.hero-tags {
-  margin-top: 32px;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.hero-tag {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.03em;
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  color: var(--text);
-}
-
-.hero-cta {
-  margin-top: 36px;
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
 }
 
 .btn {
@@ -246,11 +124,56 @@ a:hover {
   color: var(--ink);
 }
 
+/* Read by screen readers, not shown (e.g. "opens in a new tab").
+   display: none would hide it from screen readers too. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Tag pills (cards, detail pages): a <ul class="pills"> of <li class="pill"> */
+.pills {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
 /* ===========================
    Section shell
    =========================== */
 .section {
   padding: 100px 0;
+}
+
+/* The last home section has only the footer below it, so a short one
+   can't scroll to the top: the browser stops early and the section
+   above shows. Section + footer = one full screen lets #/<section> land
+   with the footer resting at the bottom. --footer-height is measured by
+   footer.js (0 until then, which is just a little extra room).
+   svh = the small viewport height (mobile, toolbars showing); the vh
+   line is the fallback for older browsers. */
+#homeView > .section:last-child {
+  min-height: calc(100vh - var(--footer-height, 0px));
+  min-height: calc(100svh - var(--footer-height, 0px));
 }
 
 .section-soft {
@@ -310,158 +233,4 @@ a:hover {
 .filter-btn .count {
   opacity: 0.6;
   margin-left: 4px;
-}
-
-/* ===========================
-   Project grid
-   =========================== */
-.project-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
-}
-
-.project-card {
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  overflow: hidden;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
-  opacity: 1;
-  transform: scale(1);
-}
-
-.project-card.is-hidden {
-  display: none;
-}
-
-.project-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 24px rgba(60, 63, 69, 0.1);
-}
-
-.project-card.is-flagship {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: 1.1fr 1fr;
-}
-
-@media (max-width: 720px) {
-  .project-card.is-flagship {
-    grid-template-columns: 1fr;
-  }
-}
-
-.project-thumb {
-  background: var(--bg-soft);
-  aspect-ratio: 16/10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--border);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.project-card.is-flagship .project-thumb {
-  aspect-ratio: auto;
-}
-
-.project-body {
-  padding: 22px;
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
-.project-tag {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--accent);
-  margin-bottom: 8px;
-}
-
-.project-body h3 {
-  font-size: 1.2rem;
-  margin-bottom: 10px;
-}
-
-.project-card.is-flagship .project-body h3 {
-  font-size: 1.6rem;
-}
-
-.project-body p {
-  font-size: 0.92rem;
-  color: var(--text);
-  flex: 1;
-}
-
-.project-links {
-  display: flex;
-  gap: 14px;
-  margin-top: 16px;
-  flex-wrap: wrap;
-}
-
-.project-links a {
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  letter-spacing: 0.02em;
-}
-
-.project-stack {
-  margin-top: 14px;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.stack-pill {
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  color: var(--text);
-  background: var(--bg-soft);
-  border: 1px solid var(--border);
-  padding: 3px 9px;
-  border-radius: 999px;
-}
-
-/* placeholder note for unwired links */
-.placeholder-note {
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  color: var(--border);
-}
-
-/* ===========================
-   Mobile nav
-   =========================== */
-@media (max-width: 720px) {
-  .nav-links {
-    position: fixed;
-    top: var(--nav-height);
-    left: 0;
-    right: 0;
-    flex-direction: column;
-    background: #fff;
-    padding: 20px 24px;
-    gap: 18px;
-    border-bottom: 1px solid var(--border);
-    transform: translateY(-110%);
-    transition: transform 0.2s ease;
-  }
-
-  .nav-links.open {
-    transform: translateY(0);
-  }
-
-  .nav-toggle {
-    display: block;
-  }
 }

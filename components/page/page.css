@@ -1,0 +1,29 @@
+/* ===========================
+   Page view (group + detail pages)
+   =========================== */
+/* No hero above, so less top space than a home section */
+.page {
+  padding-top: 40px;
+}
+
+.page-head {
+  margin-bottom: 40px;
+  max-width: 720px;
+}
+
+.page h1 {
+  font-size: clamp(1.9rem, 5vw, 2.8rem);
+}
+
+/* Focus is moved here by script, not by the keyboard: no ring */
+.page h1:focus {
+  outline: none;
+}
+
+.page-summary {
+  margin: 14px 0 0;
+}
+
+.page-head .pills {
+  margin-top: 18px;
+}
