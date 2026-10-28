@@ -30,13 +30,25 @@ html {
   }
 }
 
+/* Sticky footer: the page is at least one screen tall and <main> takes
+   the spare height, so a short page (e.g. Not found) still has its
+   footer at the bottom. Header and loader are position: fixed, so they
+   sit outside this column. */
 body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100svh;
   margin: 0;
   font-family: var(--font-body);
   color: var(--text);
   background: var(--bg);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+}
+
+main {
+  flex: 1 0 auto;
 }
 
 h1, h2, h3, h4 {
