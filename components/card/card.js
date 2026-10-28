@@ -17,23 +17,24 @@ const LABELS = new Map(
 export const labelFor = (facet, id) =>
   LABELS.get(`${facet}:${id}`) ?? id;
 
-// Takes the {node, path} items collectLeaves returns.
-export const createCard = ({node, path}) => {
+// Takes the {node, path} items collectLeaves returns. An item's eyebrow
+// replaces the default (type label, or 'Project' for groups), e.g. with
+// where a filter result lives.
+export const createCard = ({node, path, eyebrow: override}) => {
   const leaf = isLeaf(node);
-  const eyebrow = leaf
-    ? node.tags.type?.[0] && labelFor('type', node.tags.type[0])
-    : 'Project';
+  const eyebrow =
+    override ??
+    (leaf
+      ? node.tags.type?.[0] && labelFor('type', node.tags.type[0])
+      : 'Project');
   const tools = leaf ? (node.tags.tool ?? []) : [];
 
   return el(
     'article',
     {class: 'card'},
-    // Placeholder until nodes have thumbs (then srcsetFor, like the hero)
-    el(
-      'div',
-      {class: 'card-thumb', 'aria-hidden': 'true'},
-      'Screenshot coming',
-    ),
+    // Map-grid placeholder until nodes have thumbs (then srcsetFor,
+    // like the hero). Decorative, so screen readers skip it.
+    el('div', {class: 'card-thumb map-grid', 'aria-hidden': 'true'}),
     el(
       'div',
       {class: 'card-body'},

@@ -1,0 +1,64 @@
+/* ===========================
+   Filter bar (tool / type chips)
+   =========================== */
+.filter-bar {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Fixed width so the Tool and Type chips start in the same column */
+.filter-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  min-width: 3.5rem;
+}
+
+.filter-chip {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  padding: 7px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+/* Same pair as the hero buttons: off looks like .btn-ghost, on looks
+   like .btn-primary (solid orange, white text, darker on hover). */
+@media (hover: hover) {
+  /* Like the nav links: orange text on hover, plus the border */
+  .filter-chip:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+}
+
+/* Pressed state comes from aria-pressed, so what screen readers hear
+   and what the chip looks like can never disagree */
+.filter-chip[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+@media (hover: hover) {
+  .filter-chip[aria-pressed="true"]:hover {
+    background: var(--accent-dim);
+    border-color: var(--accent-dim);
+    color: #fff;
+  }
+}

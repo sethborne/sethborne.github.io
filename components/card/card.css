@@ -22,7 +22,9 @@
 @media (hover: hover) {
   .card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 10px 24px rgba(60, 63, 69, 0.1);
+    /* Warm orange glow from the token. To go back to the neutral
+       shadow, swap --accent 25% for --ink 10%. */
+    box-shadow: 0 10px 24px color-mix(in srgb, var(--accent) 25%, transparent);
   }
 }
 
@@ -33,17 +35,10 @@
   }
 }
 
+/* Look comes from .map-grid (styles.css) until real thumbs exist */
 .card-thumb {
-  background: var(--bg-soft);
   aspect-ratio: 16 / 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--border);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
 }
 
 .card-body {
@@ -58,7 +53,9 @@
   font-size: 0.72rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--accent);
+  /* Gray, not orange: orange is for things you can interact with, and
+     the title already turns orange on hover */
+  color: var(--text);
   margin-bottom: 8px;
 }
 
@@ -79,6 +76,8 @@
   inset: 0;
 }
 
+/* The card's one orange on hover: the clickable words, like every
+   other text link on the site */
 .card:hover h3 a {
   color: var(--accent);
 }

@@ -48,9 +48,17 @@
   padding: 16px;
   font-family: var(--font-mono);
   font-size: 0.75rem;
-  color: var(--border);
+  color: var(--text);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+/* A solid label, so the text reads cleanly over the map grid */
+.embed-placeholder span {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 12px;
 }
 
 /* Pending demo: no button to dodge, so center the text */

@@ -34,6 +34,32 @@ export const collectLeaves = (node, path = []) => {
   );
 };
 
+// A filter query with only tags that exist in the tree (tree.tags is the
+// union of every leaf's tags). Drops typos and stale links, and empty
+// facets, so {} means "no filter":
+//   cleanQuery({tool: ['survey123', 'nope'], type: []}, tree.tags, ['tool', 'type'])
+//   -> {tool: ['survey123']}
+export const cleanQuery = (query, tags, facets) =>
+  Object.fromEntries(
+    facets
+      .map((facet) => [
+        facet,
+        (query[facet] ?? []).filter((id) => tags[facet]?.includes(id)),
+      ])
+      .filter(([, ids]) => ids.length > 0),
+  );
+
+// Leaves matching a cleaned query: any listed value within a facet (OR),
+// and every listed facet (AND).
+//   {tool: ['survey123', 'node-js'], type: ['form']}
+//   -> (Survey123 or Node.js) and a form
+export const filterLeaves = (tree, query) =>
+  collectLeaves(tree).filter(({node}) =>
+    Object.entries(query).every(([facet, ids]) =>
+      ids.some((id) => node.tags?.[facet]?.includes(id)),
+    ),
+  );
+
 // iterative
 // export const collectLeaves = (node, path = []) => {
 //   const leaves = [];
