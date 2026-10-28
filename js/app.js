@@ -3,12 +3,14 @@ import {hideFirstLoad} from '../components/loader/loader.js';
 import {createHeader} from '../components/header/header.js';
 import {createFooter} from '../components/footer/footer.js';
 import {createHero} from '../components/hero/hero.js';
+import {createAbout} from '../components/about/about.js';
 import {createPage} from '../components/page/page.js';
 import {createProjects} from '../components/projects/projects.js';
 import {createRouter, FILTER_KEYS, SECTIONS} from './router.js';
 import {loadContent} from './content.js';
 import profile from '../content/profile.js';
 import heroContent from '../content/hero.js';
+import aboutContent from '../content/about.js';
 
 // Created in boot(); routes update its highlighted link.
 let header = null;
@@ -138,10 +140,11 @@ const boot = async () => {
   // finishes first, then call hideFirstLoad(). catch the error
   try {
     // Set up the first view while the spinner still covers the page.
-    // Hero first: the header's highlighting watches the #home section.
+    // Sections first: the header's highlighting watches their elements.
     const hero = createHero(document.getElementById('home'), {
       hero: heroContent,
     });
+    createAbout(document.getElementById('about'), {about: aboutContent});
     header = createHeader(document.getElementById('siteNav'), {
       name: profile.name,
       sections: SECTIONS,
