@@ -10,6 +10,8 @@
 @import "../components/breadcrumb/breadcrumb.css";
 @import "../components/page/page.css";
 @import "../components/embed/embed.css";
+@import "../components/filter-bar/filter-bar.css";
+@import "../components/projects/projects.css";
 
 * {
   box-sizing: border-box;
@@ -138,6 +140,18 @@ a {
   border: 0;
 }
 
+/* Basemap-style grid for image placeholders (card thumbs, demo frames)
+   until real screenshots exist. Two 1px gradients draw the lines, so
+   there's no image file, and the colors come from the tokens. */
+.map-grid {
+  background-color: var(--bg-soft);
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--border) 70%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--border) 70%, transparent) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: center;
+}
+
 /* Tag pills (cards, detail pages): a <ul class="pills"> of <li class="pill"> */
 .pills {
   list-style: none;
@@ -193,44 +207,4 @@ a {
 .section-head p {
   margin-top: 14px;
   color: var(--text);
-}
-
-/* ===========================
-   Projects: filter
-   =========================== */
-.filter-bar {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 40px;
-}
-
-.filter-btn {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 8px 16px;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.filter-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.filter-btn.active {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: #fff;
-}
-
-.filter-btn .count {
-  opacity: 0.6;
-  margin-left: 4px;
 }

@@ -1,0 +1,32 @@
+/* ===========================
+   Projects (filter status + results)
+   =========================== */
+/* Reserves one line even when empty, so toggling the first chip
+   doesn't push the grid down */
+.projects-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+  min-height: 1.6em;
+  margin: 0 0 24px;
+  font-size: 0.92rem;
+}
+
+/* Looks like a link, but it's an action on this page, so a button */
+.projects-clear {
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .projects-clear:hover {
+    color: var(--accent-dim);
+  }
+}
