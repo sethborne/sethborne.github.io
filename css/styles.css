@@ -12,6 +12,7 @@
 @import "../components/embed/embed.css";
 @import "../components/filter-bar/filter-bar.css";
 @import "../components/projects/projects.css";
+@import "../components/about/about.css";
 
 * {
   box-sizing: border-box;

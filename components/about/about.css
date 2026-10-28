@@ -1,0 +1,102 @@
+/* ===========================
+   About
+   =========================== */
+/* Mobile: photo above the text. Desktop (see below): side by side. */
+.about.has-photo {
+  display: grid;
+  gap: 40px;
+}
+
+.about-photo {
+  width: 100%;
+  max-width: 280px;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.about-photo-img,
+.about-photo-empty {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.about-photo-img {
+  object-fit: cover;
+}
+
+/* Same placeholder look as the pending demo frames */
+.about-photo-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text);
+}
+
+.about-photo-empty span {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+
+.about-text {
+  max-width: 680px;
+}
+
+.about .section-head {
+  margin-bottom: 24px;
+}
+
+.about-bio {
+  margin: 0 0 16px;
+}
+
+/* Skills: a definition list, so each group label is tied to its pills
+   for screen readers ("GIS: ArcGIS Online, ...") */
+.about-skills {
+  margin: 32px 0 0;
+  display: grid;
+  gap: 14px;
+}
+
+.about-skill-group {
+  display: grid;
+  gap: 8px;
+}
+
+.about-skills dt {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.about-skills dd {
+  margin: 0;
+}
+
+/* Desktop: photo one third, text two thirds; labels sit beside pills */
+@media (min-width: 1024px) {
+  .about.has-photo {
+    grid-template-columns: 1fr 2fr;
+    gap: 56px;
+    align-items: start;
+  }
+
+  .about-photo {
+    max-width: 320px;
+  }
+
+  .about-skill-group {
+    grid-template-columns: 4rem 1fr;
+    align-items: baseline;
+  }
+}
