@@ -73,21 +73,10 @@
   color: var(--text);
 }
 
-.hero-tags {
+/* Badge look is shared (.badges/.badge in styles.css). .hero adds
+   specificity: .badges sets margin: 0 and loads after this file. */
+.hero .hero-tags {
   margin-top: 32px;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.hero-tag {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.03em;
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  color: var(--text);
 }
 
 .hero-cta {
@@ -99,7 +88,7 @@
 
 /* Over the photo, light borders disappear: give tags and the ghost
    button a frosted fill and a darker edge. */
-.hero-tag,
+.hero .badge,
 .hero .btn-ghost {
   background: color-mix(in srgb, var(--bg) 45%, transparent);
   border-color: var(--text);

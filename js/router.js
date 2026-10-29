@@ -3,12 +3,10 @@
 
 // Home sections get routes like #/about. They win over node ids,
 // so no content group can share one of these names.
-export const SECTIONS = [
-  'projects',
-  'experience',
-  'about',
-  'contact',
-];
+export const SECTIONS = ['projects', 'about'];
+
+// Nav text when the capitalized id isn't enough
+export const SECTION_LABELS = {about: 'About & contact'};
 
 // A malformed escape like %E0 would make decodeURIComponent throw.
 const safeDecode = (part) => {
@@ -44,7 +42,7 @@ export const parseHash = (hash) => {
 //   { view: 'home', section: 'about' }
 //   { view: 'node', path: ['survey-map', 'eb-external'] }
 //   { view: 'filter', query: { tool: [...], type: [...] } }
-const FILTER_KEYS = ['tool', 'type'];
+export const FILTER_KEYS = ['tool', 'type'];
 
 export const toRoute = ({path, query}) => {
   // 1. No path at all: home, or filter mode if a filter key is present

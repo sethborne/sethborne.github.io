@@ -45,8 +45,8 @@ export const createHero = (root, {hero}) => {
         el('p', {class: 'hero-sub'}, summary),
         el(
           'div',
-          {class: 'hero-tags'},
-          tags.map((tag) => el('span', {class: 'hero-tag'}, tag)),
+          {class: 'hero-tags badges'},
+          tags.map((tag) => el('span', {class: 'badge'}, tag)),
         ),
         el(
           'div',

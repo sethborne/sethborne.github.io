@@ -3,12 +3,14 @@ import {hideFirstLoad} from '../components/loader/loader.js';
 import {createHeader} from '../components/header/header.js';
 import {createFooter} from '../components/footer/footer.js';
 import {createHero} from '../components/hero/hero.js';
-import {createCardGrid} from '../components/card/card.js';
+import {createAbout} from '../components/about/about.js';
 import {createPage} from '../components/page/page.js';
-import {createRouter, SECTIONS} from './router.js';
-import {loadContent, collectLeaves} from './content.js';
+import {createProjects} from '../components/projects/projects.js';
+import {createRouter, FILTER_KEYS, SECTION_LABELS, SECTIONS} from './router.js';
+import {loadContent} from './content.js';
 import profile from '../content/profile.js';
 import heroContent from '../content/hero.js';
+import aboutContent from '../content/about.js';
 
 // Created in boot(); routes update its highlighted link.
 let header = null;
@@ -35,12 +37,32 @@ const contentReady = loadContent();
 const whenReady = (...extra) =>
   Promise.all([document.fonts.ready, contentReady, ...extra]);
 
-// Home Projects grid: one card per top-tier group.
-const renderProjects = async () => {
-  const tree = await contentReady;
-  const items = tree.children.map((node) => ({node, path: [node.id]}));
-  document.getElementById('projectGrid').replaceChildren(createCardGrid(items));
+// {tool: ['a', 'b']} -> '#/?tool=a&tool=b'; no filter -> '#/projects'
+const filterHash = (query) => {
+  const params = new URLSearchParams();
+  for (const [facet, ids] of Object.entries(query)) {
+    for (const id of ids) params.append(facet, id);
+  }
+  const search = params.toString();
+  return search ? `#/?${search}` : '#/projects';
 };
+
+// Home Projects section: filter bar + cards. A chip click only changes
+// the URL; the route that follows does the rendering, so a shared link
+// and a click take the same path. replace() swaps the history entry
+// instead of adding one, so Back leaves the filtered view in one step.
+// `projects` is null until content loads; home routes before then have
+// nothing to reset, and filter routes wait on projectsReady.
+let projects = null;
+const projectsReady = contentReady.then((tree) => {
+  projects = createProjects(document.getElementById('projectsBody'), {
+    tree,
+    facets: FILTER_KEYS,
+    onChange: (query) => window.location.replace(filterHash(query)),
+  });
+  projects.show({});
+  return projects;
+});
 
 // One view shows at a time. Home is hidden, never rebuilt, so the
 // header's section observer keeps its elements.
@@ -58,12 +80,21 @@ const showView = (view) => {
   return changed ? 'instant' : 'auto';
 };
 
+// The view of the route before this one, to tell entering filter mode
+// (scroll to Projects) from toggling chips inside it (stay put).
+let lastView = null;
+
 const showRoute = async (route) => {
   header?.setRoute(route);
+  const enteredFrom = lastView;
+  lastView = route.view;
 
   if (route.view === 'home') {
     const behavior = showView(homeView);
     document.title = SITE_TITLE;
+    // Home never has a filter: back to the project cards. Done before
+    // scrolling, so sections below Projects don't move mid-scroll.
+    projects?.show({});
     const target =
       route.section && document.getElementById(route.section);
     if (target) target.scrollIntoView({behavior});
@@ -90,9 +121,15 @@ const showRoute = async (route) => {
     window.scrollTo({top: 0, behavior: 'instant'});
     heading.focus({preventScroll: true});
   } else if (route.view === 'filter') {
-    // Filter mode comes with filterBar.js (PLAN: Next)
-    const leaves = collectLeaves(tree);
-    console.info(`Filter: ${leaves.length} leaves before filtering`, route.query);
+    const behavior = showView(homeView);
+    document.title = SITE_TITLE;
+    await projectsReady;
+    projects.show(route.query);
+    // Arriving from elsewhere (shared link, Back): bring Projects into
+    // view. Toggling chips leaves the page where it is.
+    if (enteredFrom !== 'filter') {
+      document.getElementById('projects').scrollIntoView({behavior});
+    }
   }
 };
 
@@ -103,18 +140,22 @@ const boot = async () => {
   // finishes first, then call hideFirstLoad(). catch the error
   try {
     // Set up the first view while the spinner still covers the page.
-    // Hero first: the header's highlighting watches the #home section.
+    // Sections first: the header's highlighting watches their elements.
     const hero = createHero(document.getElementById('home'), {
       hero: heroContent,
+    });
+    createAbout(document.getElementById('about'), {
+      about: aboutContent,
+      profile,
     });
     header = createHeader(document.getElementById('siteNav'), {
       name: profile.name,
       sections: SECTIONS,
+      labels: SECTION_LABELS,
     });
     createFooter(document.getElementById('siteFooter'), {profile});
-    const projects = renderProjects();
     router.start();
-    await Promise.race([whenReady(hero.ready, projects), delay(TIMEOUT_MS)]);
+    await Promise.race([whenReady(hero.ready, projectsReady), delay(TIMEOUT_MS)]);
   } catch (err) {
     console.warn(err);
   } finally {

@@ -19,7 +19,7 @@ const renderFallback = (fallback, emptyText) =>
         loading: 'lazy',
         decoding: 'async',
       })
-    : el('div', {class: 'embed-placeholder'}, emptyText);
+    : el('div', {class: 'embed-placeholder map-grid'}, el('span', {}, emptyText));
 
 // No sandbox: Survey123 needs scripts, forms, popups and same-origin to
 // submit, and a sandbox would block them.

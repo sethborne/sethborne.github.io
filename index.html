@@ -6,11 +6,39 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0"
     />
-    <title>Seth Borne — GIS &amp; Web Developer | Web Engineer</title>
+    <title>Seth Borne | Web developer building GIS tools</title>
     <meta
       name="description"
-      content="Seth Borne. Web developer building spatial tools, data pipelines, and GIS applications."
+      content="Web developer building GIS tools: Survey123 and Experience Builder apps, web maps, and the data pipelines behind them."
     />
+    <link rel="canonical" href="https://sethborne.github.io/" />
+
+    <!-- Link previews (LinkedIn, Slack, X...). Scrapers don't run JS or
+         read past the #, so every link to the site shows this one card.
+         URLs must be absolute. Share image: tools/share-card.html -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Seth Borne" />
+    <meta
+      property="og:title"
+      content="Seth Borne | Web developer building GIS tools"
+    />
+    <meta
+      property="og:description"
+      content="Web developer building GIS tools: Survey123 and Experience Builder apps, web maps, and the data pipelines behind them."
+    />
+    <meta property="og:url" content="https://sethborne.github.io/" />
+    <meta
+      property="og:image"
+      content="https://sethborne.github.io/img/meta/meta_share_1200.jpg"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="629" />
+    <meta
+      property="og:image:alt"
+      content="Seth Borne, web developer building GIS tools, beside an ASCII art portrait"
+    />
+    <!-- X reads the og: tags for everything else -->
+    <meta name="twitter:card" content="summary_large_image" />
     <!-- No JS: hide the first-load spinner (see components/loader/) -->
     <noscript
       ><style>
@@ -73,10 +101,13 @@
               </p>
             </div>
 
-            <!-- Group cards: filled by app.js from content/site.js -->
-            <div id="projectGrid"></div>
+            <!-- Filter bar + cards: filled by components/projects/projects.js -->
+            <div id="projectsBody"></div>
           </div>
         </section>
+
+        <!-- ABOUT & CONTACT: filled by components/about/about.js (id watched by the header) -->
+        <section class="section section-soft" id="about"></section>
       </div>
 
       <!-- PAGE VIEW: filled by components/page/page.js on node routes -->
