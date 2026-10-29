@@ -11,19 +11,11 @@ export default {
   eyebrow: 'Background',
   title: 'About',
   paragraphs: [
-    "I'm a web developer who builds GIS tools: the forms, maps and " +
-      'review apps that turn raw location data into something people ' +
-      'can use. Most recently that meant Survey123 and Experience ' +
-      'Builder apps for the Washington Department of Ecology, and the ' +
-      'data pipeline behind a statewide textile reuse dataset.',
+    "I'm a web developer who builds GIS tools: the forms, maps and review apps that turn raw location data into something people can use. Most recently that meant Survey123 and Experience Builder apps for the Washington Department of Ecology, and the data pipeline behind a statewide textile reuse dataset.",
     // [?] Which GIS certificate program?
-    'I started in landscape architecture, where I learned to think in ' +
-      'sites, layers and maps. I then spent about eight years in web ' +
-      'development, building sites and front ends, before a GIS ' +
-      'certificate brought the two together.',
+    'I started in landscape architecture, where I learned to think in sites, layers and maps. I then spent about eight years in web development, building sites and front ends, before a GIS certificate brought the two together.',
     // [?] City
-    "I'm looking for GIS application developer roles: the software " +
-      "side of spatial work. I'm based in Washington.",
+    "I'm looking for GIS application developer roles: the software side of spatial work. I'm based in Washington.",
   ],
   photo: {
     ascii: 'content/about-portrait.txt',
@@ -49,9 +41,7 @@ export default {
   // profile.js has the real address.
   contact: {
     title: 'Get in touch',
-    text:
-      "I'm looking for GIS application developer roles. Email is the " +
-      'fastest way to reach me.',
+    text: "I'm looking for GIS application developer roles. Email is the fastest way to reach me.",
     links: ['email', 'resume', 'linkedin', 'github'],
   },
 };

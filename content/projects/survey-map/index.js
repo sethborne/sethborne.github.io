@@ -22,14 +22,10 @@ export default groupPage(
       'Survey123 form',
       [TOOL_SURVEY123, TOOL_ARCGIS_ONLINE, TYPE_FORM],
       {
-        summary:
-          'The form behind both apps. Entries publish automatically, as ' +
-          "the client asked, and a built-in 'pending approval' status " +
-          'supports a review-first workflow instead.',
+        summary: "The form behind both apps. Entries publish automatically, as the client asked, and a built-in 'pending approval' status supports a review-first workflow instead.",
         content: {
           embed: pendingEmbed('survey123'),
-          tryThis:
-            'Fill in the form with made-up details and submit it.',
+          tryThis: 'Fill in the form with made-up details and submit it.',
         },
       },
     ),
@@ -38,15 +34,10 @@ export default groupPage(
       'Experience Builder: public app',
       [...EB_APP, TYPE_WEB_APP],
       {
-        summary:
-          'Public map with a pin for each survey submission, updated as ' +
-          'new entries arrive. Click a pin to see the details from that ' +
-          'submission.',
+        summary: 'Public map with a pin for each survey submission, updated as new entries arrive. Click a pin to see the details from that submission.',
         content: {
           embed: pendingEmbed('eb-external'),
-          tryThis:
-            'Submit a test entry in the Survey123 form, then find your ' +
-            'pin here.',
+          tryThis: 'Submit a test entry in the Survey123 form, then find your pin here.',
         },
       },
     ),
@@ -55,26 +46,16 @@ export default groupPage(
       'Experience Builder: internal app',
       [...EB_APP, TYPE_WEB_APP, TYPE_REVIEW_TOOL],
       {
-        summary:
-          'Staff app for revising and managing entries shown on the ' +
-          'public map. Since entries publish automatically, corrections ' +
-          'happen here after they go live.',
+        summary: 'Staff app for revising and managing entries shown on the public map. Since entries publish automatically, corrections happen here after they go live.',
         content: {
           embed: pendingEmbed('eb-internal'),
-          tryThis:
-            'Open an entry, change a field and save it. The public map ' +
-            'shows the edit.',
+          tryThis: 'Open an entry, change a field and save it. The public map shows the edit.',
         },
       },
     ),
   ],
   {
-    summary:
-      'A Survey123 form collecting contact details from people in the ' +
-      'secondary textile resale economy, focused on Washington State. ' +
-      'It feeds two Experience Builder apps: a public map of ' +
-      'submissions and a staff app for managing them. Demo mockups of ' +
-      'production work for the Recycling Market Development Center.',
+    summary: 'A Survey123 form collecting contact details from people in the secondary textile resale economy, focused on Washington State. It feeds two Experience Builder apps: a public map of submissions and a staff app for managing them. Demo mockups of production work for the Recycling Market Development Center.',
     writeup,
     // Where the TL;DR goes on desktop: 'right' (default), 'left' or
     // 'full' (no column). See LAYOUTS in components/page/page.js.
