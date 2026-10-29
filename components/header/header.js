@@ -11,9 +11,11 @@ const HOME_SECTION = 'home';
 // Node and filter routes are project pages, so they light up this link.
 const PROJECTS_SECTION = 'projects';
 
-const label = (id) => id[0].toUpperCase() + id.slice(1);
+const capitalize = (id) => id[0].toUpperCase() + id.slice(1);
 
-export const createHeader = (root, {name, sections}) => {
+// labels: optional nav text per id, e.g. {about: 'About & contact'}
+export const createHeader = (root, {name, sections, labels = {}}) => {
+  const label = (id) => labels[id] ?? capitalize(id);
   // Home first, then one link per home section
   const navItems = [
     {id: HOME_SECTION, href: '#/'},
