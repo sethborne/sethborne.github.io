@@ -1,0 +1,64 @@
+/* ===========================
+   Writeup (STAR story on a page)
+   =========================== */
+/* Layout (story beside the TL;DR on desktop) lives in page.css */
+.writeup-story {
+  max-width: 720px;
+}
+
+.writeup-story p {
+  margin: 12px 0 0;
+}
+
+/* TL;DR: a quiet box, gray like static labels (orange is for things
+   you can click) */
+.writeup-tldr {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 24px;
+}
+
+.writeup-tldr h2 {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.writeup-tldr ul:not(.badges) {
+  margin: 12px 0 0;
+  padding-left: 1.2em;
+}
+
+/* Bullet points only: the stack badges are <li>s too, and a margin on
+   all but the first would knock their row out of line */
+.writeup-tldr ul:not(.badges) > li + li {
+  margin-top: 8px;
+}
+
+.writeup-tldr .badges {
+  margin-top: 18px;
+}
+
+.writeup-section {
+  margin-top: 40px;
+}
+
+.writeup-section h2 {
+  font-size: 1.4rem;
+}
+
+.writeup-actions {
+  margin: 12px 0 0;
+  padding-left: 1.2em;
+}
+
+.writeup-actions li + li {
+  margin-top: 12px;
+}
+
+.writeup-actions strong {
+  color: var(--ink);
+}
