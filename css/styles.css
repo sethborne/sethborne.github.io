@@ -122,9 +122,11 @@ a {
   border: 1px solid var(--border);
 }
 
+/* Orange on hover, like every other interactive element (filter chips
+   use the same off/hover look) */
 .btn-ghost:hover {
-  border-color: var(--ink);
-  color: var(--ink);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* Read by screen readers, not shown (e.g. "opens in a new tab").
