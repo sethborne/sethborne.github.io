@@ -65,7 +65,8 @@ const loadLines = (path) =>
 // would treat its backslashes as escapes). role="img" makes screen
 // readers announce one picture instead of reading every character.
 // --cols lets the CSS size the font so the widest line fits the box.
-const renderAscii = ({ascii, cutout, alt}) => {
+// Exported for tools/share-card.html, which draws the same portrait
+export const renderAscii = ({ascii, cutout, alt}) => {
   const pre = el('pre', {class: 'about-ascii', role: 'img', 'aria-label': alt});
   // A missing cutout only costs the orange; the portrait still shows
   const cutoutReady = cutout && loadLines(cutout).catch((err) => {
