@@ -49,6 +49,8 @@ import {
   TYPE_REVIEW_TOOL,
   TYPE_WEB_APP,
 } from './tags.js';
+// Writeups: plain data objects, so the tree stays plain data
+import surveyMapWriteup from './writeups/survey-map.js';
 
 const group = (id, title, children, more = {}) => ({
   id,
@@ -57,7 +59,12 @@ const group = (id, title, children, more = {}) => ({
   children,
 });
 
-const leaf = (id, title, tags, more = {}) => ({id, title, tags, ...more});
+const leaf = (id, title, tags, more = {}) => ({
+  id,
+  title,
+  tags,
+  ...more,
+});
 
 // Stand-in for a live app URL that isn't public yet: the page shows
 // "Live demo coming soon" instead of a Load button. Swap it for the
@@ -76,22 +83,32 @@ export default group('index', 'Seth Borne', [
     'capstone',
     'WA textile reuse dataset',
     [
-      leaf('public-app', 'Public app', [TOOL_SURVEY123, ...EB_APP, TYPE_WEB_APP], {
-        summary:
-          'Public Experience Builder map of the dataset, with a Survey123 ' +
-          'form for new sites. Live once DoE approves it.',
-      }),
+      leaf(
+        'public-app',
+        'Public app',
+        [TOOL_SURVEY123, ...EB_APP, TYPE_WEB_APP],
+        {
+          summary:
+            'Public Experience Builder map of the dataset, with a Survey123 ' +
+            'form for new sites. Live once DoE approves it.',
+        },
+      ),
       group(
         'data-pipeline',
         'Data pipeline',
         [
           // [?] Is there also a "keep both" choice? Add it if so.
-          leaf('deduper', 'Deduper', [...LOCAL_APP, TYPE_DATA_PIPELINE], {
-            summary:
-              'Browser tool that shows likely duplicate place records side ' +
-              'by side. A reviewer keeps one or removes both, and a small ' +
-              'Node.js script saved each decision to a JSON cache.',
-          }),
+          leaf(
+            'deduper',
+            'Deduper',
+            [...LOCAL_APP, TYPE_DATA_PIPELINE],
+            {
+              summary:
+                'Browser tool that shows likely duplicate place records side ' +
+                'by side. A reviewer keeps one or removes both, and a small ' +
+                'Node.js script saved each decision to a JSON cache.',
+            },
+          ),
           leaf(
             'tracker',
             'Tracker',
@@ -124,28 +141,39 @@ export default group('index', 'Seth Borne', [
     'survey-map',
     'Survey Map',
     [
-      leaf('survey123', 'Survey123 form', [TOOL_SURVEY123, TOOL_ARCGIS_ONLINE, TYPE_FORM], {
-        summary:
-          'The form behind both apps. Entries publish automatically, as ' +
-          "the client asked, and a built-in 'pending approval' status " +
-          'supports a review-first workflow instead.',
-        content: {
-          embed: pending('survey123'),
-          tryThis: 'Fill in the form with made-up details and submit it.',
+      leaf(
+        'survey123',
+        'Survey123 form',
+        [TOOL_SURVEY123, TOOL_ARCGIS_ONLINE, TYPE_FORM],
+        {
+          summary:
+            'The form behind both apps. Entries publish automatically, as ' +
+            "the client asked, and a built-in 'pending approval' status " +
+            'supports a review-first workflow instead.',
+          content: {
+            embed: pending('survey123'),
+            tryThis:
+              'Fill in the form with made-up details and submit it.',
+          },
         },
-      }),
-      leaf('eb-external', 'Experience Builder: public app', [...EB_APP, TYPE_WEB_APP], {
-        summary:
-          'Public map with a pin for each survey submission, updated as ' +
-          'new entries arrive. Click a pin to see the details from that ' +
-          'submission.',
-        content: {
-          embed: pending('eb-external'),
-          tryThis:
-            'Submit a test entry in the Survey123 form, then find your ' +
-            'pin here.',
+      ),
+      leaf(
+        'eb-external',
+        'Experience Builder: public app',
+        [...EB_APP, TYPE_WEB_APP],
+        {
+          summary:
+            'Public map with a pin for each survey submission, updated as ' +
+            'new entries arrive. Click a pin to see the details from that ' +
+            'submission.',
+          content: {
+            embed: pending('eb-external'),
+            tryThis:
+              'Submit a test entry in the Survey123 form, then find your ' +
+              'pin here.',
+          },
         },
-      }),
+      ),
       leaf(
         'eb-internal',
         'Experience Builder: internal app',
@@ -170,7 +198,37 @@ export default group('index', 'Seth Borne', [
         'secondary textile resale economy, focused on Washington State. ' +
         'It feeds two Experience Builder apps: a public map of ' +
         'submissions and a staff app for managing them. Demo mockups of ' +
-        'production work for the Washington Department of Ecology.',
+        'production work for the Recycling Market Development Center.',
+      writeup: surveyMapWriteup,
+      // Where the TL;DR goes on desktop: 'right' (default), 'left' or
+      // 'full' (no column). See LAYOUTS in components/page/page.js.
+      layout: 'full',
+      // What goes in the side column, in order: 'tldr', 'links'.
+      // Default ['tldr']; anything not listed stays in the main column.
+      aside: ['tldr'],
+      // Production versions, shown after the writeup. The demos on the
+      // app pages are my AGOL mockups; these are RMDC's own.
+      linksTitle: 'Live at the RMDC',
+      links: [
+        {
+          label: 'RMDC textiles page',
+          href:
+            'https://ecology.wa.gov/waste-toxics/reducing-recycling-waste/' +
+            'waste-reduction-programs/recycling-market-development-center/textiles',
+        },
+        {
+          label: 'Survey',
+          href:
+            'https://survey123.arcgis.com/share/f6826d6023f043dc837649b0a3547add' +
+            '?portalUrl=https://gis.ecology.wa.gov/portal',
+        },
+        {
+          label: 'Public map',
+          href:
+            'https://gis.ecology.wa.gov/portal/apps/experiencebuilder/experience/' +
+            '?id=71501934f3f4426b889b6998b70b3528',
+        },
+      ],
     },
   ),
 ]);
