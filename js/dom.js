@@ -12,6 +12,9 @@ export const el = (tag, attrs = {}, ...children) => {
     if (skip(value)) continue;
     node.setAttribute(name, value === true ? '' : value);
   }
-  node.append(...children.flat().filter((child) => !skip(child)));
+  // Infinity: arrays inside arrays (a helper's ...rest wrapping another
+  // helper's list) flatten all the way, or append() would print them
+  // as "[object HTMLElement]" text
+  node.append(...children.flat(Infinity).filter((child) => !skip(child)));
   return node;
 };
