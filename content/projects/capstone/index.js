@@ -23,9 +23,7 @@ export default groupPage(
       'Public app',
       [TOOL_SURVEY123, ...EB_APP, TYPE_WEB_APP],
       {
-        summary:
-          'Public Experience Builder map of the dataset, with a Survey123 ' +
-          'form for new sites. Live once DoE approves it.',
+        summary: 'Public Experience Builder map of the dataset, with a Survey123 form for new sites. Live once DoE approves it.',
       },
     ),
     groupPage(
@@ -38,10 +36,7 @@ export default groupPage(
           'Deduper',
           [...LOCAL_APP, TYPE_DATA_PIPELINE],
           {
-            summary:
-              'Browser tool that shows likely duplicate place records side ' +
-              'by side. A reviewer keeps one or removes both, and a small ' +
-              'Node.js script saved each decision to a JSON cache.',
+            summary: 'Browser tool that shows likely duplicate place records side by side. A reviewer keeps one or removes both, and a small Node.js script saved each decision to a JSON cache.',
           },
         ),
         detailPage(
@@ -49,26 +44,16 @@ export default groupPage(
           'Tracker',
           [...LOCAL_APP, TYPE_REVIEW_TOOL, TYPE_DATA_PIPELINE],
           {
-            summary:
-              'Browser tool for reviewing records one by one and ' +
-              "tracking each one's QA status before publishing. A small " +
-              'Node.js script saved progress to a JSON cache.',
+            summary: "Browser tool for reviewing records one by one and tracking each one's QA status before publishing. A small Node.js script saved progress to a JSON cache.",
           },
         ),
       ],
       {
-        summary:
-          'The steps between raw place records and the published ' +
-          'dataset, with two browser tools for the parts that need a person.',
+        summary: 'The steps between raw place records and the published dataset, with two browser tools for the parts that need a person.',
       },
     ),
   ],
   {
-    summary:
-      'A spatial dataset of textile reuse and recycling sites for the ' +
-      'Washington Department of Ecology. A data pipeline ingests place ' +
-      'records from several sources, removes duplicates and routes them ' +
-      'through human review, then publishes them with Survey123 and ' +
-      'Experience Builder. 3rd place, WAGISA Data Tells All.',
+    summary: 'A spatial dataset of textile reuse and recycling sites for the Washington Department of Ecology. A data pipeline ingests place records from several sources, removes duplicates and routes them through human review, then publishes them with Survey123 and Experience Builder. 3rd place, WAGISA Data Tells All.',
   },
 );
