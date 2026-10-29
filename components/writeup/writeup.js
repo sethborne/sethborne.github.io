@@ -1,6 +1,6 @@
 // Writeup: a project's story in STAR order (situation, task, action,
 // result), plus a TL;DR box for readers skimming. Renders a writeup
-// object from content/writeups/ (shape documented there).
+// object from content/projects/<id>/writeup.js (shape documented there).
 // Returns the two parts separately, {summary, story}, so the page can
 // lay them out: side by side on desktop, stacked on mobile.
 import {el} from '../../js/dom.js';

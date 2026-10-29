@@ -1,5 +1,5 @@
-// Every tag a leaf in site.js may use. Each tag knows its own facet and
-// display label, so site.js lists tags flat: [TOOL_SURVEY123, TYPE_FORM].
+// Every tag a leaf (content/projects/) may use. Each tag knows its own
+// facet and display label, so leaves list tags flat: [TOOL_SURVEY123, TYPE_FORM].
 // Import them by name; a misspelled name fails loudly at load time.
 //
 // Adding a tag: one export line here, then import it where it's used.
