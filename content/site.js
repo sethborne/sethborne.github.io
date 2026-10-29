@@ -32,7 +32,7 @@
 // Rules:
 // - id: lowercase kebab-case. It appears in URLs (#/survey-map/eb-external)
 //   and image paths, must be unique among its siblings, and can't be a
-//   home section name (SECTIONS in js/router.js: projects, about, contact).
+//   home section name (SECTIONS in js/router.js: projects, about).
 // - tags: TOOL_ / TYPE_ constants imported from tags.js, in any order.
 // - The exported tree must be plain data (no functions inside it), so
 //   JSON.stringify can turn it into JSON if a tool ever needs that.

@@ -1,15 +1,12 @@
 /* ===========================
    About
    =========================== */
-/* Mobile: photo above the text. Desktop (see below): side by side. */
-.about.has-photo {
-  display: grid;
-  gap: 40px;
-}
-
+/* Mobile: heading, photo, text, stacked. Desktop (see below): heading
+   and text on the left, photo on the right. */
 .about-photo {
+  margin-bottom: 32px;
   width: 100%;
-  max-width: 280px;
+  max-width: 220px;
   aspect-ratio: 1;
   border-radius: 6px;
   overflow: hidden;
@@ -25,6 +22,48 @@
 
 .about-photo-img {
   object-fit: cover;
+}
+
+/* ASCII portrait: the box takes the art's own height instead of a
+   square, and becomes a size container so the font can scale to it. */
+.about-photo:has(.about-ascii) {
+  aspect-ratio: auto;
+  container-type: inline-size;
+  background: var(--bg);
+}
+
+/* Plex Mono characters are 0.6em wide, so 100cqi (the box width)
+   divided by cols × 0.6 fits the widest line exactly. line-height keeps
+   the photo's shape: the square photo converted to 101 × 55, so a line
+   is 101 × 0.6 / 55 ≈ 1.1em tall. Reconvert at another size or shape:
+   line-height = cols × 0.6 × (photo height / width) / rows. */
+.about-ascii {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: calc(100cqi / (var(--cols, 100) * 0.6));
+  line-height: 1.1;
+  color: var(--ink);
+  white-space: pre;
+}
+
+/* The person in grays by character density (TIERS in about.js); --ink
+   and --text are too close to tell apart, so mid and light are --text
+   faded toward the page. The background (cutout in about.js) is orange
+   text: behind the face, where it reads as a backdrop, not a link. */
+.ascii-dark {
+  color: var(--ink);
+}
+
+.ascii-mid {
+  color: color-mix(in srgb, var(--text) 60%, var(--bg));
+}
+
+.ascii-light {
+  color: color-mix(in srgb, var(--text) 35%, var(--bg));
+}
+
+.ascii-bg {
+  color: color-mix(in srgb, var(--accent) 25%, var(--bg));
 }
 
 /* Same placeholder look as the pending demo frames */
@@ -83,20 +122,74 @@
   margin: 0;
 }
 
-/* Desktop: photo one third, text two thirds; labels sit beside pills */
+/* Desktop: text two thirds on the left, photo one third on the right,
+   its top level with the first paragraph, not the heading ("." leaves
+   that cell empty); labels sit beside pills. */
 @media (min-width: 1024px) {
   .about.has-photo {
-    grid-template-columns: 1fr 2fr;
-    gap: 56px;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    grid-template-areas:
+      "head  ."
+      "text  photo";
+    column-gap: 56px;
     align-items: start;
   }
 
+  .about.has-photo .section-head {
+    grid-area: head;
+  }
+
+  .about.has-photo .about-text {
+    grid-area: text;
+  }
+
   .about-photo {
-    max-width: 320px;
+    grid-area: photo;
+    justify-self: end;
+    max-width: 260px;
+    margin-bottom: 0;
   }
 
   .about-skill-group {
     grid-template-columns: 4rem 1fr;
     align-items: baseline;
   }
+}
+
+/* Contact block: closes the section, set off by a rule */
+.about-contact {
+  margin-top: 40px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+}
+
+.about-contact h3 {
+  font-size: 1.3rem;
+}
+
+.about-contact p {
+  margin: 10px 0 20px;
+}
+
+.about-contact-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Not live yet (pending() in content/profile.js): dimmed, no hover */
+.about-contact-links [aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.about-contact-links .btn-ghost[aria-disabled="true"]:hover {
+  border-color: var(--border);
+  color: var(--ink);
+}
+
+.about-contact-links .btn-primary[aria-disabled="true"]:hover {
+  background: var(--accent);
+  border-color: var(--accent);
 }

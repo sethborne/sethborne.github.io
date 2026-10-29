@@ -6,7 +6,7 @@ import {createHero} from '../components/hero/hero.js';
 import {createAbout} from '../components/about/about.js';
 import {createPage} from '../components/page/page.js';
 import {createProjects} from '../components/projects/projects.js';
-import {createRouter, FILTER_KEYS, SECTIONS} from './router.js';
+import {createRouter, FILTER_KEYS, SECTION_LABELS, SECTIONS} from './router.js';
 import {loadContent} from './content.js';
 import profile from '../content/profile.js';
 import heroContent from '../content/hero.js';
@@ -144,10 +144,14 @@ const boot = async () => {
     const hero = createHero(document.getElementById('home'), {
       hero: heroContent,
     });
-    createAbout(document.getElementById('about'), {about: aboutContent});
+    createAbout(document.getElementById('about'), {
+      about: aboutContent,
+      profile,
+    });
     header = createHeader(document.getElementById('siteNav'), {
       name: profile.name,
       sections: SECTIONS,
+      labels: SECTION_LABELS,
     });
     createFooter(document.getElementById('siteFooter'), {profile});
     router.start();

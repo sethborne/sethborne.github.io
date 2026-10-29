@@ -18,7 +18,7 @@ export default {
   tags: ['Node.js', 'Python', 'ArcGIS', 'Experience Builder', 'Survey123'],
   ctas: [
     {label: 'View projects', href: '#/projects', variant: 'primary'},
-    {label: 'Get in touch', href: '#/contact', variant: 'ghost'},
+    {label: 'Get in touch', href: '#/about', variant: 'ghost'},
   ],
   media: {
     type: 'image',
