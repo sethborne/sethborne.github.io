@@ -119,8 +119,8 @@ const renderSkills = (skills) =>
           {},
           el(
             'ul',
-            {class: 'pills'},
-            items.map((item) => el('li', {class: 'pill'}, item)),
+            {class: 'badges'},
+            items.map((item) => el('li', {class: 'badge'}, item)),
           ),
         ),
       ),
