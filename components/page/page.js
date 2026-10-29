@@ -46,7 +46,7 @@ const renderLinks = (title, links) =>
   );
 
 // Page layouts for pages with an aside (see `aside` in createPage),
-// picked by the node's `layout` field (site.js). Same pieces every time
+// picked by the node's `layout` field (content/projects/). Same pieces every time
 // (head, aside, main); page.css arranges them. Mobile always stacks.
 //   right: TL;DR column on the right (default)
 //   left:  TL;DR column on the left
@@ -104,7 +104,7 @@ export const createPage = ({tree, path}) => {
       ),
   );
   // Pieces that can go in the aside, by the names the node's `aside`
-  // field uses (site.js). Listed ones move there, in that order; the
+  // field uses (content/projects/). Listed ones move there, in order; the
   // rest stay in the main column. Default: just the TL;DR.
   const movable = {tldr: summary, links};
   const asideNames = (node.aside ?? ['tldr']).filter((name) => {
