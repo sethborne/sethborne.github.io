@@ -11,6 +11,7 @@ const tool = (id, label) => ({facet: 'tool', id, label});
 const type = (id, label) => ({facet: 'type', id, label});
 
 // tool
+export const TOOL_ARCGIS_ENTERPRISE = tool('arcgis-enterprise', 'ArcGIS Enterprise');
 export const TOOL_ARCGIS_ONLINE = tool('arcgis-online', 'ArcGIS Online');
 export const TOOL_EXPERIENCE_BUILDER = tool(
   'experience-builder',

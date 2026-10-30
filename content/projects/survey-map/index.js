@@ -2,7 +2,12 @@
 // project node and its pages (#/survey-map/...). How to build nodes:
 // content/helpers.js.
 
-import {EB_APP, groupPage, detailPage, pendingEmbed} from '../../helpers.js';
+import {
+  EB_APP,
+  groupPage,
+  detailPage,
+  pendingEmbed,
+} from '../../helpers.js';
 import {
   TOOL_ARCGIS_ONLINE,
   TOOL_SURVEY123,
@@ -15,7 +20,7 @@ import writeup from './writeup.js';
 
 export default groupPage(
   'survey-map',
-  'Survey Map',
+  'Washington Textile Survey and Map Tools',
   [
     detailPage(
       'survey123',
