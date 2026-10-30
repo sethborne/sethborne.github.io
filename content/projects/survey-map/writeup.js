@@ -17,7 +17,7 @@ export default {
     'ArcGIS Enterprise Portal',
   ],
   situation: [
-    'The Recycling Market Development Center (RMDC) is a collaboration between the Washington State Departments of Ecology and Commerce, and the client for our capstone. At its symposium on May 15, 2026, the sign-in table had a paper map of Washington. Each attendee added a pin, colored by their role in the textile resale economy.',
+    'The Recycling Market Development Center (RMDC) is a collaboration between the Washington State Departments of Ecology and Commerce, and the client for our capstone. At its symposium on May 14, 2026, the sign-in table had a paper map of Washington. Each attendee added a pin, colored by their role in the textile resale economy.',
     'Our project sponsor had just seen the Experience Builder app from our capstone and asked whether we could do the same for that map. We had covered Survey123 in class the week before, so I asked for a few weeks: I had an idea.',
   ],
   task: 'Turn a one-day paper map into a directory that keeps growing. Anyone in the textile resale economy can add themselves, anyone can find contacts near them, and Ecology staff decide what goes public.',
