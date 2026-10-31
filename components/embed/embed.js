@@ -38,7 +38,7 @@ const OPEN_LABEL = 'Open in new tab';
 
 // Takes a node's title plus its content fields. embed is either
 //   'https://…'                   live: Load button + new-tab link
-//   {placeholder: 'eb-external'}  pendingEmbed() (content/helpers.js): not public yet
+//   {placeholder: 'textile-contacts/public-map'}  pendingEmbed() (content/helpers.js): not public yet
 //   missing                       license ended: fallback only
 export const createEmbed = ({
   title,
