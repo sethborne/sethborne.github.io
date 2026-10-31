@@ -62,6 +62,32 @@ export const detailPage = (id, title, tags, more = {}) => ({
   ...more,
 });
 
+// For a project whose copy comes from its Word doc (copy.docx -> copy.js,
+// via tools/copy_sync.py). Returns groupPage and detailPage without the
+// title argument: the title and the other copy fields (summary, links,
+// writeup...) come from copy[id]. Fields in `more` win, so index.js can
+// still set anything by hand.
+//   const {groupPage, detailPage} = withCopy(copy);
+//   detailPage('deduper', [...LOCAL_APP, TYPE_DATA_PIPELINE])
+export const withCopy = (copy) => {
+  // [title, more with the copy fields under it]
+  const fill = (id, more = {}) => {
+    if (!copy[id]) console.warn(`No copy for page "${id}" in copy.js`);
+    const {title = id, ...fields} = copy[id] ?? {};
+    return [title, {...fields, ...more}];
+  };
+  return {
+    groupPage: (id, children, more) => {
+      const [title, rest] = fill(id, more);
+      return groupPage(id, title, children, rest);
+    },
+    detailPage: (id, tags, more) => {
+      const [title, rest] = fill(id, more);
+      return detailPage(id, title, tags, rest);
+    },
+  };
+};
+
 // Stand-in for a live app URL that isn't public yet: the page shows
 // "Live demo coming soon" instead of a Load button. Swap it for the
 // app's share URL (a plain string) once it's shared Everyone.
