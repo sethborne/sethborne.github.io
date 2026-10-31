@@ -21,9 +21,9 @@ export const findNode = (tree, path) =>
   findTrail(tree, path)?.at(-1) ?? null;
 
 // Every leaf under node, each with its full path from the root:
-//   [{ node: <eb-external>, path: ['survey-map', 'eb-external'] }, ...]
+//   [{ node: <public-map>, path: ['textile-contacts', 'public-map'] }, ...]
 // Pass the node's own path when starting below the root, e.g.
-//   collectLeaves(findNode(tree, ['capstone']), ['capstone'])
+//   collectLeaves(findNode(tree, ['textile-contacts']), ['textile-contacts'])
 export const collectLeaves = (node, path = []) => {
   if (isLeaf(node)) {
     return [{node, path}];
@@ -97,7 +97,7 @@ export const withTags = (node) => {
 
 // Leaf tags that aren't tags.js exports, e.g. a string typed
 // in by hand or an undefined from a bad spread:
-//   ['survey-map/eb-external: "web-app"']
+//   ['textile-contacts/public-map: "web-app"']
 export const unknownTags = (tree, knownTags) =>
   collectLeaves(tree).flatMap(({node, path}) =>
     [node.tags ?? []]

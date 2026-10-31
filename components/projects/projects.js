@@ -8,8 +8,8 @@ import {createCardGrid} from '../card/card.js';
 import {createFilterBar} from '../filter-bar/filter-bar.js';
 
 // Where a leaf lives, for its card's eyebrow:
-//   ['survey-map', 'eb-external'] -> 'Survey Map'
-//   ['capstone', 'data-pipeline', 'deduper'] -> 'WA textile reuse dataset › Data pipeline'
+//   ['textile-contacts', 'public-map'] -> 'Washington Textile Survey and Map Tools'
+//   ['textile-resale-economy', 'data-pipeline', 'deduper'] -> 'Washington State Textile Secondary Resale Economy › Data pipeline'
 const locationOf = (tree, path) =>
   findTrail(tree, path.slice(0, -1))
     .slice(1)
