@@ -18,3 +18,9 @@ export const el = (tag, attrs = {}, ...children) => {
   node.append(...children.flat(Infinity).filter((child) => !skip(child)));
   return node;
 };
+
+// Other sites and files open in a new tab, so visitors keep the
+// portfolio open; mailto:, in-site and pending (#) links stay put.
+// Spread into el() attrs: el('a', {href, ...newTabFor(href)}, label)
+export const newTabFor = (href) =>
+  /^https?:|\.pdf$/.test(href) ? {target: '_blank', rel: 'noopener'} : {};

@@ -1,10 +1,10 @@
 // Site footer: contact links and copyright. In normal page flow at the
 // end of every page (not fixed).
-import {el} from '../../js/dom.js';
+import {el, newTabFor} from '../../js/dom.js';
 
 export const createFooter = (root, {profile}) => {
   const links = profile.links.map(({id, label, href, pending}) =>
-    el('li', {}, el('a', {href, 'data-placeholder': pending && id}, label)),
+    el('li', {}, el('a', {href, ...newTabFor(href), 'data-placeholder': pending && id}, label)),
   );
   const year = new Date().getFullYear();
 
