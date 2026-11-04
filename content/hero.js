@@ -11,10 +11,7 @@ import profile from './profile.js';
 export default {
   eyebrow: profile.name,
   title: {lead: ['Web developer', 'building'], accent: 'spatial tools.'},
-  summary:
-    'I design and build the software around GIS data: pipelines, ' +
-    'review tools, and public-facing maps. Background in landscape ' +
-    'architecture, eight years of web development, now GIS-certified.',
+  summary: 'I design and build the software around GIS data: pipelines, review tools, and public-facing maps. Background in landscape architecture, eight years of web development, now GIS-certified.',
   tags: ['Node.js', 'Python', 'ArcGIS', 'Experience Builder', 'Survey123'],
   ctas: [
     {label: 'View projects', href: '#/projects', variant: 'primary'},

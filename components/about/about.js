@@ -2,7 +2,7 @@
 // contact block with one button per profile link.
 // Fills the existing <section id="about"> from content/about.js, with
 // the links themselves from content/profile.js.
-import {el} from '../../js/dom.js';
+import {el, newTabFor} from '../../js/dom.js';
 import {fallbackFor, srcsetFor} from '../../js/images.js';
 
 // false hides the photo column; the text then runs full width.
@@ -127,18 +127,13 @@ const renderSkills = (skills) =>
     ),
   );
 
-// Other sites and files open in a new tab; mailto: stays put.
-const opensNewTab = (href) => /^https?:|\.pdf$/.test(href);
-
 const renderLink = ({id, label, href, pending}, primary) => {
-  const newTab = !pending && opensNewTab(href);
   const link = el(
     'a',
     {
       href,
       class: `btn ${primary ? 'btn-primary' : 'btn-ghost'}`,
-      target: newTab && '_blank',
-      rel: newTab && 'noopener',
+      ...newTabFor(href),
       // Not live yet: findable for swapping, announced as unavailable,
       // and a click does nothing (href="#" would jump to the top of home)
       'data-placeholder': pending && id,

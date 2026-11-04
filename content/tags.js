@@ -1,5 +1,5 @@
-// Every tag a leaf in site.js may use. Each tag knows its own facet and
-// display label, so site.js lists tags flat: [TOOL_SURVEY123, TYPE_FORM].
+// Every tag a leaf (content/projects/) may use. Each tag knows its own
+// facet and display label, so leaves list tags flat: [TOOL_SURVEY123, TYPE_FORM].
 // Import them by name; a misspelled name fails loudly at load time.
 //
 // Adding a tag: one export line here, then import it where it's used.
@@ -11,6 +11,7 @@ const tool = (id, label) => ({facet: 'tool', id, label});
 const type = (id, label) => ({facet: 'type', id, label});
 
 // tool
+export const TOOL_ARCGIS_ENTERPRISE = tool('arcgis-enterprise', 'ArcGIS Enterprise');
 export const TOOL_ARCGIS_ONLINE = tool('arcgis-online', 'ArcGIS Online');
 export const TOOL_EXPERIENCE_BUILDER = tool(
   'experience-builder',

@@ -25,7 +25,7 @@ export default {
       label: 'LinkedIn',
       href: 'https://www.linkedin.com/in/sethborne/',
     },
-    {id: 'resume', label: 'Resume', href: 'docs/seth_borne_resume_general.pdf'},
+    {id: 'resume', label: 'Resume', href: 'docs/resume/seth_borne_resume_general.pdf'},
     {
       id: 'repo',
       label: 'Repo',

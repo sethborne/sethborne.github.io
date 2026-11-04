@@ -9,10 +9,10 @@ const START = [
   {label: 'Projects', href: '#/projects'},
 ];
 
-// trail from findTrail(tree, ['survey-map', 'eb-external']):
-//   [root, <survey-map>, <eb-external>]
-//   -> [{label: 'Survey Map', href: '#/survey-map'},
-//       {label: 'Experience Builder: public app', href: '#/survey-map/eb-external'}]
+// trail from findTrail(tree, ['textile-contacts', 'public-map']):
+//   [root, <textile-contacts>, <public-map>]
+//   -> [{label: 'Washington Textile Survey and Map Tools', href: '#/textile-contacts'},
+//       {label: 'Experience Builder: public app', href: '#/textile-contacts/public-map'}]
 // Each crumb's path is every id up to and including its own.
 const crumbsFor = (trail) =>
   trail.slice(1).map((node, i, nodes) => ({

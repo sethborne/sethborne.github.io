@@ -1,0 +1,3 @@
+# Copy files keep one string per line (see PLAN.md decisions log);
+# Prettier would move long strings onto their own lines.
+content/

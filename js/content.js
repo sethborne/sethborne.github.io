@@ -21,9 +21,9 @@ export const findNode = (tree, path) =>
   findTrail(tree, path)?.at(-1) ?? null;
 
 // Every leaf under node, each with its full path from the root:
-//   [{ node: <eb-external>, path: ['survey-map', 'eb-external'] }, ...]
+//   [{ node: <public-map>, path: ['textile-contacts', 'public-map'] }, ...]
 // Pass the node's own path when starting below the root, e.g.
-//   collectLeaves(findNode(tree, ['capstone']), ['capstone'])
+//   collectLeaves(findNode(tree, ['textile-contacts']), ['textile-contacts'])
 export const collectLeaves = (node, path = []) => {
   if (isLeaf(node)) {
     return [{node, path}];
@@ -86,7 +86,7 @@ const unionTags = (leaves) =>
     return tags;
   }, {});
 
-// Only leaves are tagged in site.js. Returns a new tree where each
+// Only leaves are tagged (content/projects/). Returns a new tree where each
 // parent's tags are the union of its leaves' tags; the input is untouched.
 export const withTags = (node) => {
   if (isLeaf(node)) return {...node};
@@ -95,9 +95,9 @@ export const withTags = (node) => {
   return {...node, children, tags};
 };
 
-// Leaf tags in site.js that aren't tags.js exports, e.g. a string typed
+// Leaf tags that aren't tags.js exports, e.g. a string typed
 // in by hand or an undefined from a bad spread:
-//   ['survey-map/eb-external: "web-app"']
+//   ['textile-contacts/public-map: "web-app"']
 export const unknownTags = (tree, knownTags) =>
   collectLeaves(tree).flatMap(({node, path}) =>
     [node.tags ?? []]
@@ -106,7 +106,7 @@ export const unknownTags = (tree, knownTags) =>
       .map((tag) => `${path.join('/')}: ${JSON.stringify(tag) ?? tag}`),
   );
 
-// site.js lists a leaf's tags flat ([TOOL_SURVEY123, TYPE_FORM]); the rest of the
+// Leaves list their tags flat ([TOOL_SURVEY123, TYPE_FORM]); the rest of the
 // app wants them by facet ({ tool: ['survey123'], type: ['form'] }).
 // Unknown tags are dropped here, after unknownTags has warned about them.
 export const groupTags = (node, knownTags) => {
@@ -127,7 +127,8 @@ export const groupTags = (node, knownTags) => {
 
 // import() resolves against this module (js/), unlike fetch, which
 // resolves against the page. Loading here, not with a top-level import,
-// means a syntax error in site.js is a caught error, not a dead app.
+// means a syntax error in site.js or any project file it imports is a
+// caught error, not a dead app.
 export const loadContent = async (
   siteUrl = '../content/site.js',
   tagsUrl = '../content/tags.js',

@@ -17,8 +17,8 @@ const safeDecode = (part) => {
   }
 };
 
-// '#/survey-map/eb-external?tool=a&tool=b'
-//   -> { path: ['survey-map', 'eb-external'], query: { tool: ['a', 'b'] } }
+// '#/textile-contacts/public-map?tool=a&tool=b'
+//   -> { path: ['textile-contacts', 'public-map'], query: { tool: ['a', 'b'] } }
 export const parseHash = (hash) => {
   const raw = hash.replace(/^#\/?/, '');
   const queryStart = raw.indexOf('?');
@@ -40,7 +40,7 @@ export const parseHash = (hash) => {
 // Route descriptors:
 //   { view: 'home' }
 //   { view: 'home', section: 'about' }
-//   { view: 'node', path: ['survey-map', 'eb-external'] }
+//   { view: 'node', path: ['textile-contacts', 'public-map'] }
 //   { view: 'filter', query: { tool: [...], type: [...] } }
 export const FILTER_KEYS = ['tool', 'type'];
 

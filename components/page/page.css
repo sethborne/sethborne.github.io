@@ -24,6 +24,118 @@
   margin: 14px 0 0;
 }
 
+/* Main column: demo, story, links. Spaced from the cards below. */
+.page-main:not(:empty) {
+  margin-bottom: 56px;
+}
+
+/* Right after the head or the TL;DR, whose margins already space it */
+.page-main > .writeup-story:first-child > .writeup-section:first-child {
+  margin-top: 0;
+}
+
+/* Pages with a TL;DR (.page-body): mobile stacks head, TL;DR, main.
+   Desktop puts the TL;DR in a column beside head + main, starting
+   level with the title (see the media query below). */
+.page-aside {
+  margin-bottom: 40px;
+}
+
+/* Live versions / source links */
+.page-links {
+  margin-top: 40px;
+}
+
+.page-links h2 {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-bottom: 14px;
+}
+
+.page-links-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Desktop layouts (the node's `layout` field, LAYOUTS in page.js).
+   Same pieces, different area maps. Rows auto + 1fr: the head row
+   stays its own height, so main starts right under it; the TL;DR
+   spans both rows. layout-full keeps the mobile stack. */
+@media (min-width: 1024px) {
+  .layout-right,
+  .layout-left {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    column-gap: 56px;
+    align-items: start;
+  }
+
+  .layout-right {
+    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-template-areas:
+      "head  aside"
+      "main  aside";
+  }
+
+  .layout-left {
+    grid-template-columns: 360px minmax(0, 1fr);
+    grid-template-areas:
+      "aside  head"
+      "aside  main";
+  }
+
+  .page-body .page-head {
+    grid-area: head;
+  }
+
+  .layout-right .page-aside,
+  .layout-left .page-aside {
+    grid-area: aside;
+    margin-bottom: 0;
+  }
+
+  .page-body .page-main {
+    grid-area: main;
+  }
+
+  /* Badges follow the layout: centered in a narrow side column, left
+     (the default) anywhere wide, where centered ones look stranded */
+  .layout-right .page-aside .badges,
+  .layout-left .page-aside .badges {
+    justify-content: center;
+  }
+
+  /* Links in the column get a little space from the TL;DR above */
+  .layout-right .page-aside .page-links,
+  .layout-left .page-aside .page-links {
+    margin-top: 32px;
+  }
+
+  /* Full width: the TL;DR box lines up with the story's width */
+  .layout-full .page-aside {
+    max-width: 720px;
+  }
+}
+
+/* Sticky (stays in view while the story scrolls) only on screens tall
+   enough to show the whole TL;DR; on a short laptop it would cut off */
+@media (min-width: 1024px) and (min-height: 760px) {
+  .layout-right .page-aside,
+  .layout-left .page-aside {
+    position: sticky;
+    top: calc(var(--nav-height) + 24px);
+  }
+}
+
+.page-subhead {
+  font-size: 1.4rem;
+  margin-bottom: 24px;
+}
+
 .page-head .pills {
   margin-top: 18px;
 }
