@@ -1,0 +1,11 @@
+# Line endings: LF everywhere, on every machine, whatever core.autocrlf
+# says. tools/copy_sync.py writes LF, so regenerated files match checkouts.
+* text=auto eol=lf
+
+# Binary: never convert, never diff as text
+*.jpg  binary
+*.png  binary
+*.ico  binary
+*.pdf  binary
+*.mp4  binary
+*.docx binary
