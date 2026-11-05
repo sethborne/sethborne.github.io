@@ -20,11 +20,63 @@
   z-index: 0;
 }
 
+/* Photos stacked on top of each other; the transition class on
+   .hero-media (hero.js, from TRANSITION in content/hero.js) decides how
+   the current one (.is-current) takes over */
 .hero-img {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover; /* crop to fill, like a background image */
+  opacity: 0;
+}
+
+.hero-img.is-current {
+  opacity: 1;
+}
+
+/* fade: crossfade */
+.hero-media.is-fade .hero-img {
+  transition: opacity 1s ease;
+}
+
+/* zoom: crossfade, plus a slow push-in that lasts the whole slide
+   (--slide-ms is set by hero.js from SLIDE_SECONDS) */
+.hero-media.is-zoom .hero-img {
+  transition: opacity 1s ease, transform var(--slide-ms) linear;
+}
+
+.hero-media.is-zoom .hero-img.is-current {
+  transform: scale(1.08);
+}
+
+/* slide: every photo is visible, and its place (data-pos) moves it.
+   Photos not yet shown wait off to the right. */
+.hero-media.is-slide .hero-img {
+  opacity: 1;
+  transform: translateX(100%);
+  transition: transform 0.8s ease;
+}
+
+.hero-media.is-slide .hero-img[data-pos="center"] {
+  transform: none;
+}
+
+.hero-media.is-slide .hero-img[data-pos="left"] {
+  transform: translateX(-100%);
+}
+
+/* none: instant cut (no transition). Parked: a photo being moved to its
+   starting side before it animates in, with no animation of its own. */
+.hero-media .hero-img.is-parked {
+  transition: none;
+}
+
+/* The wash stays above every photo */
+.hero-wash {
+  z-index: 1;
 }
 
 .hero-wash {
@@ -46,7 +98,7 @@
   max-width: 720px;
 }
 
-.hero-name {
+.hero-eyebrow {
   font-family: var(--font-mono);
   font-size: 0.9rem;
   letter-spacing: 0.08em;
@@ -92,4 +144,101 @@
 .hero .btn-ghost {
   background: color-mix(in srgb, var(--bg) 45%, transparent);
   border-color: var(--text);
+}
+
+/* ===========================
+   Slideshow controls: pause/play + one dot per photo, bottom center
+   =========================== */
+.hero-controls {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  /* No background of its own: the hero's white wash already sits under
+     it, so the dots stay readable on any photo */
+}
+
+/* Room for the controls below the buttons, so they never overlap on a
+   short screen (phones, where the text fills the hero): their 24px
+   height + 24px from the bottom + a 24px gap */
+.hero:has(.hero-controls) {
+  padding-bottom: 72px;
+}
+
+.hero-dots {
+  display: flex;
+}
+
+/* Buttons are 24px (WCAG 2.5.8 target size); the dot and the icon are
+   drawn smaller inside them */
+.hero-pause,
+.hero-dot {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+
+.hero-dot::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: var(--text);
+}
+
+/* Current photo: orange, like every active state */
+.hero-dot[aria-current="true"]::before {
+  background: var(--accent);
+}
+
+/* Pause icon: two 3px bars, the left and right borders of one box. The
+   width is the gap between them. content-box set here because the
+   site's border-box rule (*) doesn't reach ::before. 3 + 2 + 3 = 8px
+   wide, so left: 8px centers it in the 24px button. */
+.hero-pause::before {
+  content: "";
+  position: absolute;
+  top: 7px;
+  left: 8px;
+  box-sizing: content-box;
+  width: 2px;
+  height: 10px;
+  border-left: 3px solid var(--ink);
+  border-right: 3px solid var(--ink);
+}
+
+/* Play icon: a triangle (borders of an empty box) */
+.hero-pause.is-paused::before {
+  top: 6px;
+  left: 9px;
+  width: 0;
+  height: 0;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-left: 9px solid var(--ink);
+  border-right: 0;
+}
+
+@media (hover: hover) {
+  .hero-dot:hover::before {
+    background: var(--accent);
+  }
+
+  .hero-pause:hover::before {
+    border-left-color: var(--accent);
+    border-right-color: var(--accent);
+  }
+
+  .hero-pause.is-paused:hover::before {
+    border-right-color: transparent;
+  }
 }

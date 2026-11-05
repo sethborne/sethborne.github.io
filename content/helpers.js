@@ -102,6 +102,36 @@ export const fromCopy = (copy) => {
 // app's share URL (a plain string) once it's shared Everyone.
 export const pendingEmbed = (placeholder) => ({placeholder});
 
+// A page's images live in its own folder, in img/ beside index.js, so
+// they move and get deleted with the page. Files: img/<name>_<width>.jpg,
+// one per width (img/_raw/ holds Photoshop sources, gitignored). Names
+// say the image's job on the page:
+//   preview   the big image in the page's frame (content.fallback)
+//   thumb     the small image on the page's card (thumb)
+// `here` is the calling file's import.meta.url (the module's own
+// address), so the name resolves next to that file wherever the folder
+// is:
+//   fallback: pageImage(import.meta.url, 'preview', 'Map of all 2,445 places...')
+//   -> {base: '.../public-map/img/preview', widths: [800, 1280, 1600, 2560], alt}
+// The result is plain data (strings), like the rest of the tree.
+//
+// Widths to export, by name. The largest a spot needs is its widest CSS
+// size × 2 (2× screens: MacBooks, 4K at 200%):
+//   preview  frame is at most 1032px wide -> ~2064 -> 2560
+//   thumb    a card is up to ~550px wide (one column just under 600px,
+//            two on tablets) -> ~1100 -> 1280
+// Other names get every width; pass `widths` to override.
+const PAGE_WIDTHS = {
+  preview: [800, 1280, 1600, 2560],
+  thumb: [800, 1280],
+};
+const ALL_WIDTHS = [800, 1280, 1600, 2560];
+export const pageImage = (here, name, alt, widths = PAGE_WIDTHS[name] ?? ALL_WIDTHS) => ({
+  base: new URL(`img/${name}`, here).href,
+  widths,
+  alt,
+});
+
 // Tag sets shared across projects. A set used by one project only
 // lives in that project's file.
 export const EB_APP = [TOOL_EXPERIENCE_BUILDER, TOOL_ARCGIS_ONLINE];
