@@ -9,6 +9,7 @@ import {createBreadcrumb} from '../breadcrumb/breadcrumb.js';
 import {createCardGrid, labelFor} from '../card/card.js';
 import {createEmbed} from '../embed/embed.js';
 import {createWriteup} from '../writeup/writeup.js';
+import ui from '../../content/ui.js';
 
 // tabindex -1: app.js moves focus here after navigation, like a real
 // page load, without adding the heading to the Tab order.
@@ -61,15 +62,15 @@ const layoutOf = (node) => {
 };
 
 const renderNotFound = (path) => {
-  const h1 = heading('Page not found');
+  const h1 = heading(ui.page.notFoundTitle);
   return {
     element: shell(
       h1,
-      el('p', {class: 'page-summary'}, `Nothing lives at #/${path.join('/')}.`),
-      el('a', {href: '#/projects', class: 'btn btn-ghost'}, 'Back to projects'),
+      el('p', {class: 'page-summary'}, ui.page.notFoundText(path.join('/'))),
+      el('a', {href: '#/projects', class: 'btn btn-ghost'}, ui.page.notFoundBack),
     ),
     heading: h1,
-    title: 'Page not found',
+    title: ui.page.notFoundTitle,
   };
 };
 
@@ -85,7 +86,7 @@ export const createPage = ({tree, path}) => {
   const demo = (embed || fallback) && createEmbed({title: node.title, ...node.content});
   const {summary, story} = node.writeup ? createWriteup(node.writeup) : {};
   const links =
-    node.links?.length > 0 && renderLinks(node.linksTitle ?? 'Links', node.links);
+    node.links?.length > 0 && renderLinks(node.linksTitle ?? ui.page.linksTitle, node.links);
   const children = (node.children ?? []).map((child) => ({
     node: child,
     path: [...path, child.id],
@@ -145,7 +146,7 @@ export const createPage = ({tree, path}) => {
       // part of its last section
       children.length > 0 &&
         node.writeup &&
-        el('h2', {class: 'page-subhead'}, 'In this project'),
+        el('h2', {class: 'page-subhead'}, ui.page.childrenTitle),
       children.length > 0 && createCardGrid(children),
     ),
     heading: h1,

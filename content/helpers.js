@@ -31,7 +31,7 @@
 //
 //   {
 //     id: 'public-map',
-//     title: 'Experience Builder: public app',
+//     title: 'Experience Builder: Public App',
 //     tags: [TOOL_EXPERIENCE_BUILDER, TOOL_ARCGIS_ONLINE, TYPE_WEB_APP],
 //     summary: 'Public map with a pin for each survey submission...',
 //     content: {tryThis: '...', embed: {placeholder: 'public-map'}},

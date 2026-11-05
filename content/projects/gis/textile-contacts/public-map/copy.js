@@ -4,7 +4,7 @@
 // Read by index.js through fromCopy() (content/helpers.js).
 
 export default {
-  title: 'Experience Builder: public app',
+  title: 'Experience Builder: Public App',
   summary: 'Public map with a pin for each survey submission, updated as new entries arrive. Click a pin to see the details from that submission.',
   content: {
     tryThis: 'Submit a test entry in the Survey123 form, then find your pin here.',

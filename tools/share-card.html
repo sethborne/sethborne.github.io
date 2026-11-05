@@ -100,6 +100,13 @@
     <script type="module">
       import {renderAscii} from '../components/about/about.js';
       import about from '../content/about.js';
+      import meta from '../content/meta.js';
+      import profile from '../content/profile.js';
+
+      // Name and tagline come from content/; the markup keeps a copy so
+      // the card still reads right if the module fails
+      document.querySelector('.card h1').textContent = profile.name;
+      document.querySelector('.tagline').textContent = meta.shareTagline;
 
       // Paths in about.js are relative to the site root, this page is
       // one folder down

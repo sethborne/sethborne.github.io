@@ -4,6 +4,6 @@
 // Read by index.js through fromCopy() (content/helpers.js).
 
 export default {
-  title: 'Data pipeline',
+  title: 'Data Pipeline',
   summary: 'The steps between raw place records and the published dataset, with three browser tools for the parts that need a person.',
 };

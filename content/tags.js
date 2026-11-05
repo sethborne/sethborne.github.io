@@ -22,7 +22,7 @@ export const TOOL_NODE_JS = tool('node-js', 'Node.js');
 export const TOOL_SURVEY123 = tool('survey123', 'Survey123');
 
 // type
-export const TYPE_DATA_PIPELINE = type('data-pipeline', 'Data pipeline');
+export const TYPE_DATA_PIPELINE = type('data-pipeline', 'Data Pipeline');
 export const TYPE_FORM = type('form', 'Form');
-export const TYPE_REVIEW_TOOL = type('review-tool', 'Review tool');
-export const TYPE_WEB_APP = type('web-app', 'Web app');
+export const TYPE_REVIEW_TOOL = type('review-tool', 'Review Tool');
+export const TYPE_WEB_APP = type('web-app', 'Web App');

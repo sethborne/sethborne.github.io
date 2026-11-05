@@ -1,18 +1,19 @@
 // Location breadcrumb: Home › Projects › Survey Map › Experience Builder.
 // Built from a findTrail() result, so it always mirrors the content tree.
 import {el} from '../../js/dom.js';
+import ui from '../../content/ui.js';
 
 // Every trail starts here. They stand in for the tree root ('Seth Borne'),
 // which has no page of its own.
 const START = [
-  {label: 'Home', href: '#/'},
-  {label: 'Projects', href: '#/projects'},
+  {label: ui.breadcrumb.home, href: '#/'},
+  {label: ui.breadcrumb.projects, href: '#/projects'},
 ];
 
 // trail from findTrail(tree, ['textile-contacts', 'public-map']):
 //   [root, <textile-contacts>, <public-map>]
 //   -> [{label: 'Washington Textile Survey and Map Tools', href: '#/textile-contacts'},
-//       {label: 'Experience Builder: public app', href: '#/textile-contacts/public-map'}]
+//       {label: 'Experience Builder: Public App', href: '#/textile-contacts/public-map'}]
 // Each crumb's path is every id up to and including its own.
 const crumbsFor = (trail) =>
   trail.slice(1).map((node, i, nodes) => ({

@@ -17,7 +17,7 @@ const PROJECTS_SECTION = 'projects';
 
 const capitalize = (id) => id[0].toUpperCase() + id.slice(1);
 
-// labels: optional nav text per id, e.g. {about: 'About & contact'}
+// labels: optional nav text per id, e.g. {about: 'About & Contact'} (content/ui.js)
 export const createHeader = (root, {name, sections, labels = {}}) => {
   const label = (id) => labels[id] ?? capitalize(id);
   // Home first, then one link per home section

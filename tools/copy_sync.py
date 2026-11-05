@@ -70,6 +70,25 @@ LINT = [
     (re.compile(r"(?<=\w)'(?=\w)"), "straight apostrophe (use ’)"),
 ]
 
+# Fields shown as titles, headings or button labels: Title Case
+# (CLAUDE.md → Writing rules). These small words may stay lowercase
+# anywhere but first and last.
+TITLE_CASE_KEYS = {'title', 'content.openLabel', 'linksTitle', 'links'}
+SMALL_WORDS = {
+    'a', 'an', 'the', 'and', 'but', 'or', 'nor', 'for', 'so', 'yet',
+    'as', 'at', 'by', 'in', 'of', 'on', 'to', 'up', 'via',
+}
+
+
+def not_title_case(text):
+    """Words that should be capitalized but aren't: 'Data pipeline' -> ['pipeline']."""
+    words = re.findall(r"[A-Za-z][\w.’'-]*", text)
+    last = len(words) - 1
+    return [
+        word for i, word in enumerate(words)
+        if word[0].islower() and not (0 < i < last and word in SMALL_WORDS)
+    ]
+
 W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
 R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
 PKG_REL = 'http://schemas.openxmlformats.org/package/2006/relationships'
@@ -347,6 +366,9 @@ def lint(where, fields):
                 if match:
                     start = max(match.start() - 30, 0)
                     warnings.append(f'{where} / {key}: {message}: ...{text[start:match.end() + 30]}...')
+            lower = key in TITLE_CASE_KEYS and not_title_case(text)
+            if lower:
+                warnings.append(f'{where} / {key}: not Title Case ({", ".join(lower)}): {text}')
     return warnings
 
 
