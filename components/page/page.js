@@ -81,9 +81,9 @@ export const createPage = ({tree, path}) => {
   const node = trail.at(-1);
   const h1 = heading(node.title);
   const labels = isLeaf(node) ? tagLabels(node.tags) : [];
-  // Something to show in the frame: a live URL, a screenshot, or both
-  const {embed, fallback} = node.content ?? {};
-  const demo = (embed || fallback) && createEmbed({title: node.title, ...node.content});
+  // Something to show in the frame: a live URL, a link out, a screenshot
+  const {embed, link, fallback} = node.content ?? {};
+  const demo = (embed || link || fallback) && createEmbed({title: node.title, ...node.content});
   const {summary, story} = node.writeup ? createWriteup(node.writeup) : {};
   const links =
     node.links?.length > 0 && renderLinks(node.linksTitle ?? ui.page.linksTitle, node.links);
