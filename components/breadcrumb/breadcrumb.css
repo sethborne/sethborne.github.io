@@ -3,7 +3,7 @@
    =========================== */
 .breadcrumb ol {
   list-style: none;
-  margin: 0 0 24px;
+  margin: 0;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
@@ -23,4 +23,80 @@
 
 .breadcrumb [aria-current="page"] {
   color: var(--ink);
+}
+
+/* Space below the in-page breadcrumb, whichever form shows */
+nav.breadcrumb {
+  margin-bottom: 24px;
+}
+
+/* "‹ Parent": phones only (media query below). One line; a long title
+   ends in "…" */
+.breadcrumb-up {
+  display: none;
+  max-width: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ===========================
+   Breadcrumb bar: slides in under the header once the breadcrumb
+   scrolls away (breadcrumb.js). Below the header (z-index 100), so the
+   header and its mobile menu cover it.
+   =========================== */
+.crumb-bar {
+  position: fixed;
+  top: var(--nav-height);
+  left: 0;
+  right: 0;
+  z-index: 90;
+  /* Top: the page's gap (tokens.css), so the trail doesn't shift when
+     the bar takes over from the breadcrumb */
+  padding: var(--page-gap) 0 10px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--border);
+  opacity: 0;
+  visibility: hidden;
+  /* top: follows the header when it hides on phones, at its speed */
+  transition: opacity 0.25s ease, visibility 0.25s ease, top 0.25s ease;
+}
+
+.crumb-bar.is-shown {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Wide screens: the full trail on one line; a name too long to fit
+   ends in "…" instead of wrapping */
+.crumb-bar ol {
+  flex-wrap: nowrap;
+}
+
+.crumb-bar li {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Phones (the header's hamburger width, header.css): "‹ Parent" in
+   place of the full trail, in the page and in the bar */
+@media (max-width: 720px) {
+  .breadcrumb ol {
+    display: none;
+  }
+
+  .breadcrumb-up {
+    display: block;
+  }
+
+  /* Header slid away (header.js is-hidden): the bar takes its place */
+  body:has(.nav.is-hidden) .crumb-bar {
+    top: 0;
+  }
 }

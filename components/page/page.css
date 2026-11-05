@@ -1,9 +1,12 @@
 /* ===========================
    Page view (group + detail pages)
    =========================== */
-/* No hero above, so less top space than a home section */
-.page {
-  padding-top: 40px;
+/* No hero above, so the page starts just under the fixed header
+   (--page-gap: none on phones, a hair on bigger screens). Two classes,
+   so this beats styles.css's .section padding, which loads after every
+   component file (@import must come first) and would win a tie. */
+.section.page {
+  padding-top: calc(var(--nav-height) + var(--page-gap));
 }
 
 .page-head {
