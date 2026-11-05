@@ -34,13 +34,13 @@ export default {
       items: ['ArcGIS Online', 'ArcGIS Pro', 'Experience Builder', 'Survey123'],
     },
     {label: 'Web', items: ['JavaScript', 'HTML', 'CSS', 'Node.js']},
-    {label: 'Data', items: ['Python', 'JSON', 'Data cleaning and deduplication']},
+    {label: 'Data', items: ['Python', 'JSON', 'Data Cleaning and Deduplication']},
   ],
   // links: ids from content/profile.js, in order; the first is the
   // section's one primary button. Pending links show dimmed until
   // profile.js has the real address.
   contact: {
-    title: 'Get in touch',
+    title: 'Get in Touch',
     text: "I'm looking for GIS application developer roles. Email is the fastest way to reach me.",
     links: ['email', 'resume', 'linkedin', 'github'],
   },

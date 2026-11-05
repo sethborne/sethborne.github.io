@@ -14,8 +14,8 @@ export default {
   summary: 'I design and build the software around GIS data: pipelines, review tools, and public-facing maps. Background in landscape architecture, eight years of web development, now GIS-certified.',
   tags: ['Node.js', 'Python', 'ArcGIS', 'Experience Builder', 'Survey123'],
   ctas: [
-    {label: 'View projects', href: '#/projects', variant: 'primary'},
-    {label: 'Get in touch', href: '#/about', variant: 'ghost'},
+    {label: 'View Projects', href: '#/projects', variant: 'primary'},
+    {label: 'Get in Touch', href: '#/about', variant: 'ghost'},
   ],
   media: {
     type: 'image',

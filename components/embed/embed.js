@@ -5,6 +5,7 @@
 // decides instead (ARCHITECTURE.md → Embeds).
 import {el} from '../../js/dom.js';
 import {fallbackFor, srcsetFor} from '../../js/images.js';
+import ui from '../../content/ui.js';
 
 // emptyText fills the box when there's no screenshot yet
 const renderFallback = (fallback, emptyText) =>
@@ -33,9 +34,6 @@ const renderIframe = (src, title) =>
     referrerpolicy: 'strict-origin-when-cross-origin',
   });
 
-// Link text when content.openLabel isn't given. The ↗ is always added.
-const OPEN_LABEL = 'Open in new tab';
-
 // Takes a node's title plus its content fields. embed is either
 //   'https://…'                   live: Load button + new-tab link
 //   {placeholder: 'textile-contacts/public-map'}  pendingEmbed() (content/helpers.js): not public yet
@@ -45,20 +43,20 @@ export const createEmbed = ({
   embed,
   fallback,
   tryThis,
-  openLabel = OPEN_LABEL,
+  openLabel = ui.embed.open,
 }) => {
   const live = typeof embed === 'string';
   const frame = el(
     'div',
     {class: 'embed-frame'},
-    renderFallback(fallback, live ? 'Screenshot coming' : 'Live demo coming soon'),
+    renderFallback(fallback, live ? ui.embed.screenshotComing : ui.embed.comingSoon),
   );
 
   if (live) {
     const button = el(
       'button',
       {class: 'btn btn-primary embed-load', type: 'button'},
-      'Load live demo',
+      ui.embed.load,
     );
     button.addEventListener('click', () => {
       const iframe = renderIframe(embed, title);
@@ -76,7 +74,7 @@ export const createEmbed = ({
       'figcaption',
       {class: 'embed-caption'},
       tryThis &&
-        el('p', {class: 'embed-try'}, el('strong', {}, 'Try this: '), tryThis),
+        el('p', {class: 'embed-try'}, el('strong', {}, `${ui.embed.tryThis}: `), tryThis),
       live &&
         el(
           'a',

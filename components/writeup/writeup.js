@@ -1,9 +1,10 @@
 // Writeup: a project's story in STAR order (situation, task, action,
 // result), plus a TL;DR box for readers skimming. Renders a writeup
-// object from content/projects/<id>/writeup.js (shape documented there).
+// object from a page's copy.js (shape: ARCHITECTURE.md → Writeups).
 // Returns the two parts separately, {summary, story}, so the page can
 // lay them out: side by side on desktop, stacked on mobile.
 import {el} from '../../js/dom.js';
+import ui from '../../content/ui.js';
 
 // A string is one paragraph, an array is several
 const paragraphs = (text) =>
@@ -16,7 +17,7 @@ const renderTldr = (tldr, stack) =>
   el(
     'section',
     {class: 'writeup-tldr'},
-    el('h2', {}, 'TL;DR'),
+    el('h2', {}, ui.writeup.tldr),
     el('ul', {}, tldr.map((line) => el('li', {}, line))),
     stack &&
       el(
@@ -40,9 +41,9 @@ export const createWriteup = ({tldr, stack, situation, task, action, result}) =>
   story: el(
     'div',
     {class: 'writeup-story'},
-    situation && section('Situation', paragraphs(situation)),
-    task && section('Task', paragraphs(task)),
-    action && section('Action', renderActions(action)),
-    result && section('Result', paragraphs(result)),
+    situation && section(ui.writeup.situation, paragraphs(situation)),
+    task && section(ui.writeup.task, paragraphs(task)),
+    action && section(ui.writeup.action, renderActions(action)),
+    result && section(ui.writeup.result, paragraphs(result)),
   ),
 });

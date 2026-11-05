@@ -4,8 +4,7 @@
 // onChange gets the next query and the caller decides what happens.
 import {el} from '../../js/dom.js';
 import {labelFor} from '../card/card.js';
-
-const FACET_LABELS = {tool: 'Tool', type: 'Type'};
+import ui from '../../content/ui.js';
 
 // The query with one chip flipped. Returns a new object; a facet with
 // nothing left is dropped, so turning off the last chip gives {}.
@@ -48,7 +47,7 @@ export const createFilterBar = ({tags, facets, onChange}) => {
       el(
         'div',
         {class: 'filter-group', role: 'group', 'aria-labelledby': `filter-${facet}`},
-        el('span', {class: 'filter-label', id: `filter-${facet}`}, FACET_LABELS[facet] ?? facet),
+        el('span', {class: 'filter-label', id: `filter-${facet}`}, ui.filterBar.facets[facet] ?? facet),
         chips.filter((chip) => chip.facet === facet).map(({button}) => button),
       ),
     ),
