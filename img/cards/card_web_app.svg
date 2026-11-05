@@ -1,0 +1,11 @@
+<!-- Card art for Web App: a browser window with a map in it.
+     Used as a CSS mask (card.css): shapes only, color from the accent token. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100">
+  <rect x="28" y="16" width="104" height="68" rx="5" fill="none" stroke="#000" stroke-width="3"/>
+  <line x1="28" y1="29" x2="132" y2="29" stroke="#000" stroke-width="3"/>
+  <circle cx="37" cy="22.5" r="2.2"/><circle cx="45" cy="22.5" r="2.2"/><circle cx="53" cy="22.5" r="2.2"/>
+  <rect x="31" y="31" width="98" height="51" opacity="0.15"/>
+  <path d="M34,74 C52,66 58,52 78,54 S104,40 126,36" fill="none" stroke="#000" stroke-width="2.5" opacity="0.55"/>
+  <path d="M60,82 L70,31 M96,82 L112,31" fill="none" stroke="#000" stroke-width="1.5" opacity="0.35"/>
+  <path fill-rule="evenodd" d="M88,36 a9,9 0 0 1 9,9 c0,7 -9,16 -9,16 c0,0 -9,-9 -9,-16 a9,9 0 0 1 9,-9 z M88,41.5 a3.5,3.5 0 1 0 0.01,0 z"/>
+</svg>
