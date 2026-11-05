@@ -35,10 +35,68 @@
   }
 }
 
-/* Look comes from .map-grid (styles.css) until real thumbs exist */
+/* A photo (thumb or preview), or type art on the .map-grid look
+   (styles.css); card.js → cardImage picks which */
 .card-thumb {
+  position: relative;
   aspect-ratio: 16 / 10;
   border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+
+/* Screenshots crop from the top, so the app's header stays in view */
+.card-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+/* Type art at rest: gray drawing on light gray, no grid (grid + art was
+   too busy). On hover or keyboard focus it turns orange on a faint
+   orange tint, alongside the title: the card's one orange. */
+.card-thumb.is-art {
+  background: var(--bg-soft);
+  transition: background-color 0.18s ease;
+}
+
+.card-thumb.is-art .card-art {
+  background: color-mix(in srgb, var(--text) 55%, var(--bg-soft));
+  transition: background-color 0.18s ease;
+}
+
+.card:has(a:focus-visible) .card-thumb.is-art {
+  background: color-mix(in srgb, var(--accent) 6%, var(--bg));
+}
+
+.card:has(a:focus-visible) .card-art {
+  background: var(--accent);
+}
+
+@media (hover: hover) {
+  .card:hover .card-thumb.is-art {
+    background: color-mix(in srgb, var(--accent) 6%, var(--bg));
+  }
+
+  .card:hover .card-art {
+    background: var(--accent);
+  }
+}
+
+/* Type art (content/card-art.js): the SVG is a mask, so it gives the
+   shape and the background gives the color (gray, orange on hover:
+   above). A file that fails to load masks everything out, leaving the
+   gray. */
+.card-art {
+  position: absolute;
+  inset: 14% 18%;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
 }
 
 .card-body {

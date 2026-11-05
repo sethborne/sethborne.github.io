@@ -39,12 +39,16 @@ export const parseHash = (hash) => {
 //   { view: 'home', section: 'about' }
 //   { view: 'node', path: ['textile-contacts', 'public-map'] }
 //   { view: 'filter', query: { tool: [...], type: [...] } }
+//   { view: 'filter', query: { view: ['all'] } }   every app and tool, no filter
 export const FILTER_KEYS = ['tool', 'type'];
+// Projects section's View tabs: ?view=all lists every app and tool
+export const VIEW_KEY = 'view';
 
 export const toRoute = ({path, query}) => {
-  // 1. No path at all: home, or filter mode if a filter key is present
+  // 1. No path at all: home, or filter mode if a filter key (or the
+  //    View tabs' key) is present
   if (path.length === 0) {
-    const hasFilter = FILTER_KEYS.some((key) => key in query);
+    const hasFilter = [...FILTER_KEYS, VIEW_KEY].some((key) => key in query);
     return hasFilter ? {view: 'filter', query} : {view: 'home'};
   }
   // 2. if view home and need a section
