@@ -5,6 +5,10 @@ import {el} from '../../js/dom.js';
 // Header gets its background once the page scrolls past this.
 const SCROLLED_AT = 40;
 
+// Scrolls smaller than this are ignored, so a finger's jitter doesn't
+// flicker the header in and out on phones.
+const SCROLL_SLACK = 8;
+
 // The hero's id; its nav link goes to #/ rather than #/home.
 const HOME_SECTION = 'home';
 
@@ -53,21 +57,36 @@ export const createHeader = (root, {name, sections, labels = {}}) => {
     ),
   );
 
-  // Compact on scroll
-  const onScroll = () =>
-    root.classList.toggle(
-      'is-scrolled',
-      window.scrollY > SCROLLED_AT,
-    );
-  window.addEventListener('scroll', onScroll, {passive: true});
-  onScroll();
-
   const isMenuOpen = () => list.classList.contains('open');
 
   const setOpen = (open) => {
     list.classList.toggle('open', open);
     toggle.setAttribute('aria-expanded', String(open));
   };
+
+  // Hidden only applies on phones (header.css)
+  const setHidden = (hidden) => root.classList.toggle('is-hidden', hidden);
+
+  // On scroll: background past the top; on phones, hide while scrolling
+  // down and show on any scroll up. Never hides near the top or with the
+  // menu open.
+  let lastY = window.scrollY;
+  const onScroll = () => {
+    // Clamp: iOS bounces past the bottom, and the bounce back would
+    // read as a scroll up
+    const maxY = document.documentElement.scrollHeight - window.innerHeight;
+    const y = Math.min(window.scrollY, maxY);
+    root.classList.toggle('is-scrolled', y > SCROLLED_AT);
+    const delta = y - lastY;
+    if (Math.abs(delta) < SCROLL_SLACK) return;
+    lastY = y;
+    setHidden(delta > 0 && y > SCROLLED_AT && !isMenuOpen());
+  };
+  window.addEventListener('scroll', onScroll, {passive: true});
+  onScroll();
+
+  // Tabbing into a hidden header brings it back
+  root.addEventListener('focusin', () => setHidden(false));
 
   // event listeners
   // open/close nav on click
