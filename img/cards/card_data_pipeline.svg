@@ -1,0 +1,14 @@
+<!-- Card art for Data Pipeline: records falling into a funnel, out into a table.
+     Used as a CSS mask (card.css): shapes only, color from the accent token. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100">
+  <g opacity="0.45">
+    <rect x="30" y="14" width="9" height="6" rx="1.5"/>
+    <rect x="46" y="10" width="9" height="6" rx="1.5"/>
+    <rect x="60" y="15" width="9" height="6" rx="1.5"/>
+  </g>
+  <polygon points="24,28 76,28 58,52 58,70 42,70 42,52" fill="none" stroke="#000" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M62,62 H84 M78,56 L85,62 L78,68" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="92" y="26" width="46" height="54" rx="3" fill="none" stroke="#000" stroke-width="3"/>
+  <rect x="92" y="26" width="46" height="12"/>
+  <path d="M92,52 H138 M92,66 H138 M114,38 V80" fill="none" stroke="#000" stroke-width="2" opacity="0.55"/>
+</svg>

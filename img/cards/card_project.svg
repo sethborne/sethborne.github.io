@@ -1,0 +1,9 @@
+<!-- Card art for project (group) cards: stacked map layers.
+     Used as a CSS mask (card.css): only the shapes matter, the color
+     comes from the accent token. Lower opacity = lighter orange. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100">
+  <polygon points="80,56 132,74 80,92 28,74" opacity="0.3"/>
+  <polygon points="80,38 132,56 80,74 28,56" opacity="0.55"/>
+  <polygon points="80,20 132,38 80,56 28,38" fill="none" stroke="#000" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M54,38 L80,47 L106,38 M67,29.5 L93,47" fill="none" stroke="#000" stroke-width="2" opacity="0.6"/>
+</svg>
