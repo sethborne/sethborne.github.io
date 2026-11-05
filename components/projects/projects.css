@@ -30,3 +30,10 @@
     color: var(--accent-dim);
   }
 }
+
+/* Focus like a text link (styles.css), since it looks like one */
+.projects-clear:focus-visible {
+  outline: none;
+  text-decoration: underline 2px var(--accent);
+  text-underline-offset: 4px;
+}
