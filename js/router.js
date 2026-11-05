@@ -57,16 +57,18 @@ export const toRoute = ({path, query}) => {
   // return {view: 'home'};
 };
 
+// onRoute(route, {fresh}): `fresh` is true when a link to the current
+// URL was clicked, so app.js treats it as a new visit, not a revisit.
 export const createRouter = ({onRoute}) => {
-  const handleChange = () =>
-    onRoute(toRoute(parseHash(window.location.hash)));
+  const current = () => toRoute(parseHash(window.location.hash));
+  const handleChange = () => onRoute(current());
 
   // hashchange doesn't fire when a link points at the current hash,
   // so re-run the route ourselves (e.g. scroll back to a section).
   const handleClick = (event) => {
     const link = event.target.closest('a[href^="#/"]');
     if (link && link.getAttribute('href') === window.location.hash) {
-      handleChange();
+      onRoute(current(), {fresh: true});
     }
   };
 

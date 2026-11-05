@@ -8,6 +8,7 @@ import {createPage} from '../components/page/page.js';
 import {createProjects} from '../components/projects/projects.js';
 import {createRouter, FILTER_KEYS, SECTIONS} from './router.js';
 import {loadContent} from './content.js';
+import {createScrollMemory} from './scroll-memory.js';
 import profile from '../content/profile.js';
 import heroContent from '../content/hero.js';
 import aboutContent from '../content/about.js';
@@ -87,7 +88,34 @@ const showView = (view) => {
 // (scroll to Projects) from toggling chips inside it (stay put).
 let lastView = null;
 
-const showRoute = async (route) => {
+// Back, Forward and reload get their saved position back (see
+// scroll-memory.js); everything else scrolls as each view decides.
+const memory = createScrollMemory();
+const jumpTo = (top) => window.scrollTo({top, behavior: 'instant'});
+
+// Restores jump, not scroll: Back should feel instant. Waits for fonts
+// and anything else that changes the page's height (the home cards on
+// a reload), or the spot would be out of reach or off by a few lines.
+const restoreTo = async (top, ...waitFor) => {
+  await Promise.all([document.fonts.ready, ...waitFor]);
+  jumpTo(top);
+};
+
+// Home revisits wait for the cards. Back from a project page with the
+// saved spot above the cards (part of the hero still showing) lands on
+// the top of Projects instead: the visitor came back to pick another
+// card. A reload keeps the exact spot, even in the hero.
+const restoreHome = async (top, {fromPage}) => {
+  await Promise.all([document.fonts.ready, projectsReady]);
+  const projectsTop =
+    document.getElementById('projects').getBoundingClientRect().top +
+    window.scrollY;
+  jumpTo(fromPage && top < projectsTop ? projectsTop : top);
+};
+
+const showRoute = async (route, {fresh} = {}) => {
+  // First, before any await: history.state still belongs to this route
+  const savedY = memory.arrive({fresh});
   header?.setRoute(route);
   const enteredFrom = lastView;
   lastView = route.view;
@@ -98,6 +126,10 @@ const showRoute = async (route) => {
     // Home never has a filter: back to the project cards. Done before
     // scrolling, so sections below Projects don't move mid-scroll.
     projects?.show({});
+    if (savedY !== null) {
+      restoreHome(savedY, {fromPage: enteredFrom === 'node'});
+      return;
+    }
     const target =
       route.section && document.getElementById(route.section);
     if (target) target.scrollIntoView({behavior});
@@ -119,18 +151,23 @@ const showRoute = async (route) => {
     pageView.replaceChildren(element);
     showView(pageView);
     document.title = `${title} | ${profile.name}`;
-    // A new page starts at the top, and focus moves to its heading the
-    // way a real page load would, so screen readers announce it.
-    window.scrollTo({top: 0, behavior: 'instant'});
+    // A new page starts at the top (a revisit, at its saved spot), and
+    // focus moves to its heading the way a real page load would, so
+    // screen readers announce it.
+    if (savedY !== null) restoreTo(savedY);
+    else jumpTo(0);
     heading.focus({preventScroll: true});
   } else if (route.view === 'filter') {
     const behavior = showView(homeView);
     document.title = SITE_TITLE;
     await projectsReady;
     projects.show(route.query);
-    // Arriving from elsewhere (shared link, Back): bring Projects into
-    // view. Toggling chips leaves the page where it is.
-    if (enteredFrom !== 'filter') {
+    // Back or reload: the saved spot. Arriving from elsewhere (a shared
+    // link, a chip clicked on home): bring Projects into view. Toggling
+    // chips leaves the page where it is.
+    if (savedY !== null) {
+      restoreTo(savedY);
+    } else if (enteredFrom !== 'filter') {
       document.getElementById('projects').scrollIntoView({behavior});
     }
   }
