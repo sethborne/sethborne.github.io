@@ -82,9 +82,11 @@
   color: var(--accent);
 }
 
-/* The ring goes around the card, not just the title text */
+/* The ring goes around the card, not just the title text (and no
+   text-link underline either: the card is the shape) */
 .card h3 a:focus-visible {
   outline: none;
+  text-decoration: none;
 }
 
 .card:has(a:focus-visible) {
