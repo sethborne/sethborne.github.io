@@ -1,39 +1,11 @@
 /* ===========================
-   Projects (filter status + results)
+   Projects (status line + results)
    =========================== */
-/* Reserves one line even when empty, so toggling the first chip
-   doesn't push the grid down */
+/* Always one line of text now (every view has a status), and the
+   min-height keeps the grid from moving if one is ever empty */
 .projects-status {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 16px;
   min-height: 1.6em;
   margin: 0 0 24px;
-  font-size: 0.92rem;
-}
-
-/* Looks like a link, but it's an action on this page, so a button */
-.projects-clear {
-  font: inherit;
   font-family: var(--font-mono);
-  font-size: 0.78rem;
-  color: var(--accent);
-  background: none;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-}
-
-@media (hover: hover) {
-  .projects-clear:hover {
-    color: var(--accent-dim);
-  }
-}
-
-/* Focus like a text link (styles.css), since it looks like one */
-.projects-clear:focus-visible {
-  outline: none;
-  text-decoration: underline 2px var(--accent);
-  text-underline-offset: 4px;
+  font-size: 0.8rem;
 }
