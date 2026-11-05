@@ -71,6 +71,38 @@
   border: 0;
 }
 
+/* Link frame: the whole screenshot is the link. Hovering anywhere on it
+   darkens the button, like hovering the button itself. */
+.embed-link {
+  text-decoration: none;
+}
+
+/* With a real screenshot, the link frame takes the image's own shape
+   instead of the fixed 4:3 / 16:10, so nothing is cropped. Only here:
+   a live embed keeps the fixed shape, since the iframe replaces the
+   image and needs the same space. (The placeholder box keeps it too.) */
+.embed-link:has(.embed-fallback) {
+  aspect-ratio: auto;
+}
+
+.embed-link .embed-fallback {
+  height: auto;
+}
+
+.embed-link:hover .btn-primary {
+  background: var(--accent-dim);
+  border-color: var(--accent-dim);
+}
+
+/* Keyboard focus: the frame's outline (its shape), not the text-link
+   underline. Extra specificity: styles.css's a:not(.btn):focus-visible
+   loads after this file and would win a tie. */
+.embed a.embed-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  text-decoration: none;
+}
+
 .embed-caption {
   margin-top: 14px;
   display: flex;
