@@ -4,7 +4,7 @@
 // Read by index.js through fromCopy() (content/helpers.js).
 
 export default {
-  title: 'Survey123 form',
+  title: 'Survey123 Form',
   summary: "The form behind both apps. Entries publish automatically, as the client asked, and a built-in 'pending approval' status supports a review-first workflow instead.",
   content: {
     tryThis: 'Fill in the form with made-up details and submit it.',

@@ -4,7 +4,7 @@
 // Read by index.js through fromCopy() (content/helpers.js).
 
 export default {
-  title: 'Public app',
+  title: 'Public App',
   summary: 'Public Experience Builder map of all 2,445 places, live on Ecology’s portal. Built and styled by my teammate Chelsea on view layers I published from the pipeline.',
   linksTitle: 'Live on the Ecology Portal',
   links: [

@@ -3,6 +3,7 @@
 import {el} from '../../js/dom.js';
 import {isLeaf} from '../../js/content.js';
 import * as TAGS from '../../content/tags.js';
+import ui from '../../content/ui.js';
 
 // Grouped tags hold ids only ({tool: ['survey123']}), so look the
 // display label back up from the tags.js exports.
@@ -18,7 +19,7 @@ export const labelFor = (facet, id) =>
   LABELS.get(`${facet}:${id}`) ?? id;
 
 // Takes the {node, path} items collectLeaves returns. An item's eyebrow
-// replaces the default (type label, or 'Project' for groups), e.g. with
+// replaces the default (type label, or ui.card.groupEyebrow for groups), e.g. with
 // where a filter result lives.
 export const createCard = ({node, path, eyebrow: override}) => {
   const leaf = isLeaf(node);
@@ -26,7 +27,7 @@ export const createCard = ({node, path, eyebrow: override}) => {
     override ??
     (leaf
       ? node.tags.type?.[0] && labelFor('type', node.tags.type[0])
-      : 'Project');
+      : ui.card.groupEyebrow);
   const tools = leaf ? (node.tags.tool ?? []) : [];
 
   return el(

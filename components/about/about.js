@@ -4,13 +4,14 @@
 // the links themselves from content/profile.js.
 import {el, newTabFor} from '../../js/dom.js';
 import {fallbackFor, srcsetFor} from '../../js/images.js';
+import ui from '../../content/ui.js';
 
 // false hides the photo column; the text then runs full width.
 const SHOW_PHOTO = true;
 
 // Placeholder until the portrait exists, or if it fails to load
 const placeholder = () =>
-  el('div', {class: 'about-photo-empty map-grid'}, el('span', {}, 'Photo coming'));
+  el('div', {class: 'about-photo-empty map-grid'}, el('span', {}, ui.about.photoComing));
 
 // Portrait tones: converters pick denser characters for darker spots,
 // so each character's density decides its color (about.css). Spaces

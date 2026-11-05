@@ -5,9 +5,6 @@
 // so no content group can share one of these names.
 export const SECTIONS = ['projects', 'about'];
 
-// Nav text when the capitalized id isn't enough
-export const SECTION_LABELS = {about: 'About & contact'};
-
 // A malformed escape like %E0 would make decodeURIComponent throw.
 const safeDecode = (part) => {
   try {

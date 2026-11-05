@@ -74,9 +74,19 @@ a {
   }
 }
 
+/* Keyboard focus. Shaped things (buttons, chips, cards) get an outline
+   that follows their shape; text links get an underline instead, which
+   stays with the text rather than boxing it. Hover changes color only,
+   so the underline always means focus. */
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
+}
+
+a:not(.btn):focus-visible {
+  outline: none;
+  text-decoration: underline 2px var(--accent);
+  text-underline-offset: 4px;
 }
 
 .container {
