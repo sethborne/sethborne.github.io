@@ -40,7 +40,8 @@ const contentReady = loadContent();
 const whenReady = (...extra) =>
   Promise.all([document.fonts.ready, contentReady, ...extra]);
 
-// {tool: ['a', 'b']} -> '#/?tool=a&tool=b'; no filter -> '#/projects'
+// {tool: ['a', 'b']} -> '#/?tool=a&tool=b'; {view: ['all']} -> '#/?view=all';
+// {} (the Projects view) -> '#/projects'
 const filterHash = (query) => {
   const params = new URLSearchParams();
   for (const [facet, ids] of Object.entries(query)) {

@@ -1,7 +1,7 @@
 // Project card: one content node as a clickable summary.
 // createCardGrid lays out a list of them (home Projects, group pages).
 import {el} from '../../js/dom.js';
-import {isLeaf} from '../../js/content.js';
+import {collectLeaves, isLeaf} from '../../js/content.js';
 import {fallbackFor, srcsetFor} from '../../js/images.js';
 import * as TAGS from '../../content/tags.js';
 import CARD_ART from '../../content/card-art.js';
@@ -66,15 +66,16 @@ const createThumb = ({photo, art}) =>
   );
 
 // Takes the {node, path} items collectLeaves returns. An item's eyebrow
-// replaces the default (type label, or ui.card.groupEyebrow for groups), e.g. with
-// where a filter result lives.
+// replaces the default (type label, or for groups ui.card.groupEyebrow:
+// how many apps and tools it holds), e.g. with where a filter result lives.
+// A path of one id is a top-level project.
 export const createCard = ({node, path, eyebrow: override}) => {
   const leaf = isLeaf(node);
   const eyebrow =
     override ??
     (leaf
       ? node.tags.type?.[0] && labelFor('type', node.tags.type[0])
-      : ui.card.groupEyebrow);
+      : ui.card.groupEyebrow(collectLeaves(node).length, path.length === 1));
   const tools = leaf ? (node.tags.tool ?? []) : [];
 
   return el(
