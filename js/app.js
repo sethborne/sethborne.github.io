@@ -6,7 +6,7 @@ import {createHero} from '../components/hero/hero.js';
 import {createAbout} from '../components/about/about.js';
 import {createPage} from '../components/page/page.js';
 import {createProjects} from '../components/projects/projects.js';
-import {createRouter, FILTER_KEYS, SECTIONS} from './router.js';
+import {createRouter, FILTER_KEYS, parseHash, SECTIONS, toRoute} from './router.js';
 import {loadContent} from './content.js';
 import {createScrollMemory} from './scroll-memory.js';
 import profile from '../content/profile.js';
@@ -196,7 +196,12 @@ const boot = async () => {
     });
     createFooter(document.getElementById('siteFooter'), {profile});
     router.start();
-    await Promise.race([whenReady(hero.ready, projectsReady), delay(TIMEOUT_MS)]);
+    // The hero photo only matters when the first view shows it: home and
+    // section routes. A deep link to a page (or a filter link, scrolled
+    // past the hero) needs just fonts and content.
+    const showsHero = toRoute(parseHash(window.location.hash)).view === 'home';
+    const extra = showsHero ? [hero.ready, projectsReady] : [projectsReady];
+    await Promise.race([whenReady(...extra), delay(TIMEOUT_MS)]);
   } catch (err) {
     console.warn(err);
   } finally {

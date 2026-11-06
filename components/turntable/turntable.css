@@ -1,0 +1,315 @@
+/* ===========================
+   Turntable (drag to turn a rendered 3D model; phase buttons)
+   =========================== */
+.turntable {
+  margin: 0 0 40px;
+}
+
+/* The frame's shape comes from the data (inline aspect-ratio), so the
+   page keeps its height before any frame loads (scroll memory needs that) */
+.tt-stage {
+  position: relative;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  /* Vertical swipes still scroll the page on phones; sideways ones turn */
+  touch-action: pan-y;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tt-stage.is-dragging {
+  cursor: grabbing;
+}
+
+.tt-stage.is-over-building {
+  cursor: pointer;
+}
+
+.tt-stage:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.tt-stage canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.tt-highlight {
+  pointer-events: none;
+}
+
+/* While a phase's frames load: the first-load spinner's ring
+   (.loader-ring, loader.css) and a line of text, over a light wash
+   so the first frame shows faintly underneath. Under reduced motion
+   loader.css hides the ring, leaving the text. */
+.tt-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  cursor: progress;
+}
+
+.tt-loading[hidden] {
+  display: none;
+}
+
+.tt-loading-text {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--ink);
+}
+
+/* The lines are written plain (content/ui.js); the … is added here */
+.tt-loading-text::after {
+  content: "…";
+}
+
+/* The hint waits until the model can turn */
+.tt-stage.is-loading .tt-hint {
+  opacity: 0;
+}
+
+/* Corner badge: compass needle + 'Facing NE', or degrees */
+.tt-angle {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  border-radius: 999px;
+}
+
+.tt-angle:has(.tt-needle) {
+  padding-left: 5px;
+}
+
+/* No transition: crossing north (355° to 0°) would spin it the long way */
+.tt-needle {
+  width: 20px;
+  height: 20px;
+}
+
+.tt-needle-ring {
+  fill: none;
+  stroke: var(--border);
+}
+
+.tt-needle-north {
+  fill: var(--accent);
+}
+
+.tt-needle-south {
+  fill: var(--text);
+  fill-opacity: 0.45;
+}
+
+.tt-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink);
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.tt-hint.is-gone {
+  opacity: 0;
+}
+
+/* Pop-up over a tapped building (only with `popups` and data for it) */
+.tt-popup {
+  position: absolute;
+  z-index: 2;
+  width: 220px;
+  padding: 12px 14px 14px;
+  font-size: 0.85rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--accent);
+  border-radius: 6px;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.12);
+  transform: translate(-50%, calc(-100% - 14px));
+}
+
+.tt-popup[hidden] {
+  display: none;
+}
+
+.tt-popup h3 {
+  margin: 0 28px 4px 0;
+  font-size: 1rem;
+}
+
+.tt-popup p {
+  margin: 0;
+}
+
+.tt-popup-close {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 28px;
+  height: 28px;
+  font-size: 1.1rem;
+  color: var(--text);
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.tt-popup-close:focus-visible {
+  outline: 2px solid var(--accent);
+}
+
+@media (hover: hover) {
+  .tt-popup-close:hover {
+    color: var(--accent);
+  }
+}
+
+/* ----- Phase buttons -----
+   Pills reuse .filter-chip and tabs reuse .view-tab (filter-bar.css);
+   only the layout and the timeline live here */
+.tt-phases {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-top: 16px;
+}
+
+.tt-phase-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.look-tabs .tt-phase-list {
+  gap: 0 22px;
+}
+
+/* Timeline: steps on a line, built phases filled in */
+.tt-timeline {
+  position: relative;
+  flex: 1;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0;
+  min-width: 240px;
+}
+
+/* Track from the first dot's center to the last's: half a column in from
+   each end (--steps, the phase count, set in JS). The orange part grows
+   to the current phase (width set in JS). */
+.tt-timeline::before,
+.tt-progress {
+  content: "";
+  position: absolute;
+  left: calc(50% / var(--steps));
+  top: 9px;
+  height: 2px;
+}
+
+.tt-timeline::before {
+  right: calc(50% / var(--steps));
+  background: var(--border);
+}
+
+.tt-progress {
+  background: var(--accent);
+  transition: width 0.25s ease;
+}
+
+.tt-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0 0 4px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.tt-step::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  box-sizing: border-box;
+  background: var(--bg);
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.tt-step.is-built::before {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.tt-step[aria-pressed="true"] {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.tt-step[aria-pressed="true"]::before {
+  background: var(--bg);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+/* Text-style control: underline focus, like text links */
+.tt-step:focus-visible {
+  outline: none;
+  text-decoration: underline 2px;
+  text-underline-offset: 4px;
+}
+
+@media (hover: hover) {
+  .tt-step:hover {
+    color: var(--accent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tt-hint,
+  .tt-progress,
+  .tt-step::before {
+    transition: none;
+  }
+}

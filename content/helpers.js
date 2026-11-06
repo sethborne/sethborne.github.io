@@ -55,6 +55,7 @@
 // - Copy is a draft: comments marked [?] are facts still to confirm.
 
 import {TOOL_ARCGIS_ONLINE, TOOL_EXPERIENCE_BUILDER} from './tags.js';
+import ui from './ui.js';
 
 export const groupPage = (id, title, children, more = {}) => ({
   id,
@@ -80,10 +81,16 @@ export const detailPage = (id, title, tags, more = {}) => ({
 export const fromCopy = (copy) => {
   // [title, more with the copy fields under it]
   const fill = (id, more = {}) => {
-    const {title = id, content: copyContent, ...fields} = copy;
+    const {title = id, content: copyContent, sections: copySections = [], ...fields} = copy;
     if (!copy.title) console.warn(`No title for page "${id}" in its copy.js`);
     const content = (copyContent || more.content) && {...copyContent, ...more.content};
-    return [title, {...fields, ...more, ...(content && {content})}];
+    // Sections pair up by position: the doc's first heading goes with
+    // index.js's first section, and so on
+    if (more.sections && more.sections.length !== copySections.length) {
+      console.warn(`Page "${id}": ${more.sections.length} sections in index.js, ${copySections.length} in its doc`);
+    }
+    const sections = more.sections?.map((section, i) => ({...copySections[i], ...section}));
+    return [title, {...fields, ...more, ...(content && {content}), ...(sections && {sections})}];
   };
   return {
     groupPage: (id, children, more) => {
@@ -96,6 +103,16 @@ export const fromCopy = (copy) => {
     },
   };
 };
+
+// Sections: a page with several pieces (a gallery, a turntable, a demo)
+// lists them in `sections`, each rendered as a heading, an optional
+// intro line, and its piece. A section takes the same fields as
+// `content` (turntable, embed, link, fallback, tryThis...); its heading
+// and intro come from the doc's Sections field, matched by position:
+//   sections: [
+//     {id: 'phasing-model', turntable: turntable(import.meta.url, {...})},
+//   ]
+// `id` names the section in the code only (it isn't shown).
 
 // Stand-in for a live app URL that isn't public yet: the page shows
 // "Live demo coming soon" instead of a Load button. Swap it for the
@@ -130,6 +147,64 @@ export const pageImage = (here, name, alt, widths = PAGE_WIDTHS[name] ?? ALL_WID
   base: new URL(`img/${name}`, here).href,
   widths,
   alt,
+});
+
+// A turntable: a 3D model you drag to turn, from rendered frames (one
+// image per 5° step), optionally in phases (build-out over time). The
+// frames live in img/turntable/ beside the page's index.js, written by
+// tools/turntable_frames.ps1 from the raw renders in img/_raw/turntable/:
+//   img/turntable/phase_a/base_00_640.jpg   the render, one file per size
+//   img/turntable/phase_a/base_00_1024.jpg
+//   img/turntable/phase_a/color_00.png      ID pass: one flat color per building
+// Pass what's particular to this model; TURNTABLE_DEFAULTS fills the rest:
+//   content: {
+//     turntable: turntable(import.meta.url, {
+//       phases: ['a', 'b', 'c'],   // folder ids, in order (A, B, C on the buttons)
+//       heading: 'NE',             // which way the camera faces in frame 0
+//       alt: 'Massing model of ...',
+//     }),
+//   }
+// Settings (any of them can be passed to override the default):
+//   frames     frames per full turn
+//   aspect     the frame's shape, a CSS aspect-ratio
+//   sizes      render widths on disk; each screen loads one, the smallest
+//              that covers the frame's width × pixel ratio (capped at 1.5)
+//   clockwise  the frame numbers turn the camera clockwise (seen from above)
+//   controls   phase buttons: 'pills' (filter chips), 'tabs' (View tabs), 'timeline'
+//   drag       'follow': the model moves with the finger; 'reverse'
+//   angle      corner badge: 'compass' ('Facing NE' + needle), 'degrees', 'off'
+//   highlight  tap a building to highlight it (needs the color pass)
+//   popups     tap a building for its pop-up, from `buildings`:
+//              {'#00ff00': {title: 'Tower A', text: '...'}}, keyed by its
+//              color in the ID pass. No entry, no pop-up.
+//   whimsy     while frames load: true rotates `loadingLines` (random, a
+//              new one every couple of seconds); false, or an empty list,
+//              shows `loadingText`. Screen readers always hear loadingText.
+//   loadingText   plain loading message (default: ui.turntable.loading)
+//   loadingLines  whimsical lines (default: ui.turntable.loadingLines),
+//              e.g. loadingLines: ['Pouring the foundations', 'Raising the towers']
+const TURNTABLE_DEFAULTS = {
+  frames: 72,
+  aspect: '4 / 3',
+  sizes: [640, 1024],
+  clockwise: true,
+  controls: 'timeline',
+  drag: 'follow',
+  angle: 'compass',
+  highlight: true,
+  popups: false,
+  buildings: {},
+  whimsy: true,
+  loadingText: ui.turntable.loading,
+  loadingLines: ui.turntable.loadingLines,
+};
+export const turntable = (here, {phases, heading, alt, ...more}) => ({
+  ...TURNTABLE_DEFAULTS,
+  base: new URL('img/turntable/', here).href,
+  phases,
+  heading,
+  alt,
+  ...more,
 });
 
 // Tag sets shared across projects. A set used by one project only

@@ -13,4 +13,5 @@ export default {
   'form': 'img/cards/card_form.svg', // clipboard with a map pin
   'data-pipeline': 'img/cards/card_data_pipeline.svg', // records into a funnel, out to a table
   'review-tool': 'img/cards/card_review_tool.svg', // two records side by side, a check
+  'interactive-model': 'img/cards/card_interactive_model.svg', // block on a turntable, orbit arrow
 };

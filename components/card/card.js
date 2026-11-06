@@ -68,14 +68,21 @@ const createThumb = ({photo, art}) =>
 // Takes the {node, path} items collectLeaves returns. An item's eyebrow
 // replaces the default (type label, or for groups ui.card.groupEyebrow:
 // how many apps and tools it holds), e.g. with where a filter result lives.
-// A path of one id is a top-level project.
+// A path of one id is a top-level project. Default eyebrows:
+//   group                'Project · 4 Apps and Tools' (or '3 Apps and Tools' inside one)
+//   top-level leaf       'Project · Interactive Model' (a standalone project: all its types)
+//   leaf in a project    'Web App' (its first type)
 export const createCard = ({node, path, eyebrow: override}) => {
   const leaf = isLeaf(node);
+  const topLevel = path.length === 1;
+  const types = leaf ? (node.tags.type ?? []).map((id) => labelFor('type', id)) : [];
   const eyebrow =
     override ??
-    (leaf
-      ? node.tags.type?.[0] && labelFor('type', node.tags.type[0])
-      : ui.card.groupEyebrow(collectLeaves(node).length, path.length === 1));
+    (!leaf
+      ? ui.card.groupEyebrow(collectLeaves(node).length, topLevel)
+      : topLevel
+        ? ui.card.standaloneEyebrow(types)
+        : types[0]);
   const tools = leaf ? (node.tags.tool ?? []) : [];
 
   return el(

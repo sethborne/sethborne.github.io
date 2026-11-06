@@ -17,10 +17,17 @@ export default {
   // Eyebrow on a group card, with how many apps and tools it holds:
   // 'Project · 4 Apps and Tools' on home, '3 Apps and Tools' for a group
   // inside a project (Data Pipeline). Leaf cards show their type tag.
+  // A standalone project (a top-level page with no child pages) lists its
+  // type labels instead: 'Project · Renderings and Interactive Model'
   card: {
     groupEyebrow: (count, isProject) => {
       const holds = `${count} ${count === 1 ? 'App or Tool' : 'Apps and Tools'}`;
       return isProject ? `Project · ${holds}` : holds;
+    },
+    standaloneEyebrow: (types) => {
+      // ['A'] -> 'A'; ['A', 'B'] -> 'A and B'; ['A', 'B', 'C'] -> 'A, B and C'
+      const list = types.length > 1 ? `${types.slice(0, -1).join(', ')} and ${types.at(-1)}` : types[0];
+      return list ? `Project · ${list}` : 'Project';
     },
   },
   embed: {
@@ -62,4 +69,34 @@ export default {
     result: 'Result',
   },
   about: {photoComing: 'Photo Coming'},
+  // 3D turntable (components/turntable/): phase buttons, hint, corner badge
+  turntable: {
+    phases: 'Phase',
+    phase: (id) => `Phase ${id.toUpperCase()}`,
+    hint: 'Drag to Turn',
+    hintTap: 'Drag to Turn · Tap a Building',
+    facing: (point) => `Facing ${point}`,
+    // While a phase's frames load: screen readers hear `loading` once;
+    // the screen shows a random line from `loadingLines`, a new one every
+    // couple of seconds, or `loading` with whimsy off. These are the
+    // defaults; a turntable can pass its own (turntable() in helpers.js).
+    // Sentence case: status messages. CSS adds the …
+    loading: 'Loading images',
+    loadingLines: [
+      'Calibrating pixels',
+      'Optimizing bytes',
+      'Narfaling the garthunk',
+      'Pouring the foundations',
+      'Raising the towers',
+      'Polishing the curtain walls',
+      'Unrolling the sidewalks',
+      'Filling the harbor',
+      'Leveling the ground plane',
+      'Herding 72 frames',
+      'Aligning the cameras',
+      'Warming up the turntable',
+      'Consulting the zoning board',
+      'Sharpening the edges',
+    ],
+  },
 };
