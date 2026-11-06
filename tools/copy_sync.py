@@ -41,10 +41,13 @@ PROJECTS = ROOT / 'content' / 'projects'
 #   list:   always an array
 #   action: array of {lead, text}, split at the first ': '
 #   links:  array of {label, href}, from Word hyperlinks
+#   section: array of {title, text?}: "Heading" or "Heading: intro text",
+#           in the order of the page's sections in index.js
 FIELDS = [
     ('Title', 'title', 'text'),
     ('Summary', 'summary', 'text'),
     ('Try This', 'content.tryThis', 'text'),
+    ('Sections', 'sections', 'section'),
     ('Open Label', 'content.openLabel', 'text'),
     ('Links Title', 'linksTitle', 'text'),
     ('Links', 'links', 'links'),
@@ -199,6 +202,12 @@ def to_value(kind, items, where):
                 raise CopyError(f'{where}: Action item needs "Lead: text": {text!r}')
             out.append({'lead': lead, 'text': rest})
         return out
+    if kind == 'section':
+        out = []
+        for text, _ in items:
+            title, sep, rest = text.partition(': ')
+            out.append({'title': title, 'text': rest} if sep else {'title': title})
+        return out
     if kind == 'links':
         out = []
         for text, href in items:
@@ -316,6 +325,9 @@ const walk = (node, path) => {
   const {tryThis, openLabel} = node.content ?? {};
   const content = Object.fromEntries(Object.entries({tryThis, openLabel}).filter(([, v]) => v !== undefined));
   if (Object.keys(content).length) copy.content = content;
+  // Sections: only their copy (heading, intro); the pieces stay in index.js
+  const sections = (node.sections ?? []).filter((s) => s.title).map(({title, text}) => (text ? {title, text} : {title}));
+  if (sections.length) copy.sections = sections;
   pages.push({path, copy});
   for (const child of node.children ?? []) walk(child, [...path, child.id]);
 };
@@ -369,6 +381,11 @@ def lint(where, fields):
             lower = key in TITLE_CASE_KEYS and not_title_case(text)
             if lower:
                 warnings.append(f'{where} / {key}: not Title Case ({", ".join(lower)}): {text}')
+    # Section headings are headings; their intro text is a sentence
+    for item in fields.get('sections', []):
+        lower = not_title_case(item['title'])
+        if lower:
+            warnings.append(f'{where} / sections: not Title Case ({", ".join(lower)}): {item["title"]}')
     return warnings
 
 
@@ -402,6 +419,7 @@ def doc_body(folder, flat, add_link):
         f'Each Heading 2 is a field: {FIELD_NAMES}. Each paragraph under it is one item. '
         'Add a field by adding its heading; delete the heading and its text to remove it.',
         'Action items are "Lead: text". Links are hyperlinks: the text is the button label.',
+        'Sections items are "Heading" or "Heading: intro text", one per section, in page order.',
         'Comments are ignored, so use them for notes. Tracked changes are fine: insertions count, deletions don’t.',
     ]
     out = [para(run(label(folder)), 'Title')]
@@ -415,6 +433,9 @@ def doc_body(folder, flat, add_link):
         for item in items:
             if kind == 'action':
                 out.append(para(run(curly(item['lead']) + ':', bold=True) + run(' ' + curly(item['text'])), 'ListBullet'))
+            elif kind == 'section':
+                text = item.get('text')
+                out.append(para(run(curly(item['title']) + (':' if text else ''), bold=True) + (run(' ' + curly(text)) if text else ''), 'ListBullet'))
             elif kind == 'links':
                 rid = add_link(item['href'])
                 link = f'<w:hyperlink r:id="{rid}">{run(curly(item["label"]), style="Hyperlink")}</w:hyperlink>'

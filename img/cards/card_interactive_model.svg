@@ -1,0 +1,13 @@
+<!-- Card art for Interactive Model: a building block on a turntable, with an orbit arrow.
+     Used as a CSS mask (card.css): shapes only, color from the accent token. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100">
+  <ellipse cx="80" cy="74" rx="44" ry="11" fill="none" stroke="#000" stroke-width="3"/>
+  <path d="M66,36 L80,29 L94,36 L94,66 L80,73 L66,66 Z" fill="none" stroke="#000" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M66,36 L80,43 L94,36 M80,43 L80,73" fill="none" stroke="#000" stroke-width="3" stroke-linejoin="round"/>
+  <g opacity="0.55">
+    <rect x="70" y="48" width="6" height="3" rx="1.5"/><rect x="70" y="56" width="6" height="3" rx="1.5"/>
+    <rect x="84" y="48" width="6" height="3" rx="1.5"/><rect x="84" y="56" width="6" height="3" rx="1.5"/>
+  </g>
+  <path d="M30,46 A52,18 0 0 1 130,46" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
+  <path d="M124,39 L131,47 L121,49" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
+</svg>
