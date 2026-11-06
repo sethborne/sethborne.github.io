@@ -33,16 +33,39 @@ const wrap = (i, frames) => ((i % frames) + frames) % frames;
 
 const pad = (n) => String(n).padStart(2, '0');
 
-// img/turntable/phase_a/base_00.jpg, .../color_00.png
-const frameUrl = (base, phase, pass, i) =>
-  `${base}phase_${phase}/${pass}_${pad(i)}.${pass === 'base' ? 'jpg' : 'png'}`;
+// img/turntable/phase_a/base_00_1024.jpg (one file per size), .../color_00.png
+const frameUrl = (base, phase, pass, i, size) =>
+  pass === 'base'
+    ? `${base}phase_${phase}/base_${pad(i)}_${size}.jpg`
+    : `${base}phase_${phase}/color_${pad(i)}.png`;
 
-// Load order for a phase: the current frame, then outward both ways, so a
-// drag in either direction finds frames ready
+// The current frame, then outward both ways, so a drag in either
+// direction finds frames ready
 const outward = (from, frames) => {
   const order = [from];
   for (let k = 1; k <= frames / 2; k++) order.push(wrap(from + k, frames), wrap(from - k, frames));
   return [...new Set(order)];
+};
+
+// Coarse to fine: every COARSE-th frame loads first (18 of 72, 20°
+// apart), plus the current one, so the model turns after a quarter of
+// the download; the rest fill in after. A missing frame is never more
+// than COARSE / 2 steps from a loaded one, which stands in.
+const COARSE = 4;
+const loadOrder = (from, frames) => {
+  const order = outward(from, frames);
+  const first = order.filter((i) => i === from || i % COARSE === 0);
+  return {first, rest: order.filter((i) => !first.includes(i))};
+};
+
+// The render width to load: the smallest size that covers the frame's
+// on-screen pixels. Pixel ratio capped at 1.5: on a 3× phone, 1024px
+// frames would look a bit sharper for twice the download.
+const MAX_DPR = 1.5;
+const pickSize = (cssWidth, dpr, sizes) => {
+  const need = cssWidth * Math.min(dpr, MAX_DPR);
+  const sorted = [...sizes].sort((a, b) => a - b);
+  return sorted.find((size) => size >= need) ?? sorted.at(-1);
 };
 
 // A frame's file, kept compressed (a JPG frame is ~100 KB as a Blob,
@@ -112,9 +135,12 @@ let created = 0;
 
 // How long each loading line shows before the next
 const LINE_MS = 1800;
+// How long loading may take before the spinner shows, so a fast or
+// cached load never flashes it
+const SPINNER_DELAY_MS = 500;
 
 export const createTurntable = ({title, turntable: options, tryThis}) => {
-  const {base, frames, phases, aspect, alt, controls, drag, angle, highlight, popups, buildings, whimsy, loadingText, loadingLines} = options;
+  const {base, frames, phases, sizes, aspect, alt, controls, drag, angle, highlight, popups, buildings, whimsy, loadingText, loadingLines} = options;
   const look = LOOKS[controls] ?? LOOKS.pills;
   const tappable = highlight || popups;
   const dir = drag === 'reverse' ? -1 : 1;
@@ -122,7 +148,11 @@ export const createTurntable = ({title, turntable: options, tryThis}) => {
   let phase = 0;
   let frame = 0;
   let selected = null; // [r, g, b] of the tapped building
-  const cache = Object.fromEntries(phases.map((id) => [id, {base: [], color: [], loading: null, ready: false}]));
+  let shown = null; // {p, i}: the frame on screen (the nearest one while frames fill in)
+  let size = Math.max(...sizes); // render width, picked once the stage has a size (Start)
+  // Per phase: files (Blobs) by frame; `first` resolves once the current
+  // frame + the coarse set are in (then `ready`), `loading` once all are
+  const cache = Object.fromEntries(phases.map((id) => [id, {base: [], color: [], first: null, loading: null, ready: false}]));
   const current = () => cache[phases[phase]];
 
   // ----- Elements -----
@@ -135,7 +165,7 @@ export const createTurntable = ({title, turntable: options, tryThis}) => {
   const loadingLine = el('span', {class: 'tt-loading-text', 'aria-hidden': 'true'});
   const loading = el(
     'div',
-    {class: 'tt-loading', role: 'status'},
+    {class: 'tt-loading', role: 'status', hidden: true},
     el('span', {class: 'loader-ring', 'aria-hidden': 'true'}),
     loadingLine,
     el('span', {class: 'visually-hidden'}, loadingText),
@@ -161,9 +191,10 @@ export const createTurntable = ({title, turntable: options, tryThis}) => {
 
   // ----- Loading -----
   // A phase downloads the first time it's shown (or warms up in the
-  // background, see Start), and its files stay, compressed. Until all
-  // its frames are in, the spinner covers the frame and turning waits.
-  // Frames are decoded only near the current angle (Decoding, below).
+  // background, see Start), and its files stay, compressed. Until the
+  // current frame and the coarse set are in, turning waits, and after
+  // SPINNER_DELAY_MS the spinner covers the frame. The fine frames fill
+  // in after. Frames are decoded only near the current angle (Decoding).
   const ready = () => current().ready;
 
   // Whimsy on and lines to pick from: a random line, never the one
@@ -174,14 +205,30 @@ export const createTurntable = ({title, turntable: options, tryThis}) => {
     loadingLine.textContent = others[Math.floor(Math.random() * others.length)] ?? loadingLines[0];
   };
   let lineTimer = null;
+  let spinnerTimer = null;
 
-  const showLoading = () => {
-    const show = !ready();
+  const setLoading = (show) => {
     loading.hidden = !show;
     stage.classList.toggle('is-loading', show);
+  };
+
+  // Not ready: the spinner shows after SPINNER_DELAY_MS, unless the
+  // phase is ready first (this runs again then and cancels it)
+  const showLoading = () => {
+    clearTimeout(spinnerTimer);
     clearInterval(lineTimer);
     lineTimer = null;
-    if (!show) return;
+    if (ready()) {
+      setLoading(false);
+      return;
+    }
+    // Already showing (a phase switch mid-load): no wait
+    if (!loading.hidden) revealLoading();
+    else spinnerTimer = setTimeout(revealLoading, SPINNER_DELAY_MS);
+  };
+
+  const revealLoading = () => {
+    setLoading(true);
     if (!whimsical) {
       loadingLine.textContent = loadingText;
       return;
@@ -191,28 +238,40 @@ export const createTurntable = ({title, turntable: options, tryThis}) => {
     if (loadingLines.length > 1) lineTimer = setInterval(nextLine, LINE_MS);
   };
 
-  const loadPhase = (index) => {
+  // One frame's render + ID pass. A failure is logged, never thrown, so
+  // one missing file doesn't stop the rest; the nearest frame stands in.
+  const loadFrame = async (index, i) => {
     const id = phases[index];
     const store = cache[id];
+    try {
+      const [b, c] = await Promise.all([
+        fetchBlob(frameUrl(base, id, 'base', i, size)),
+        fetchBlob(frameUrl(base, id, 'color', i)).catch(() => null), // the ID pass is optional
+      ]);
+      store.base[i] = b;
+      store.color[i] = c;
+      // The current frame shows as soon as it's in (under the spinner,
+      // or in place of the stand-in)
+      if (index === phase && i === frame) draw();
+    } catch (err) {
+      console.warn(`Turntable: frame ${i} in phase ${id} failed to load`, err);
+    }
+  };
+
+  // Two passes, one after the other: requests made together share the
+  // bandwidth, so the coarse set would otherwise arrive no sooner.
+  const loadPhase = (index) => {
+    const store = cache[phases[index]];
     if (store.loading) return store.loading;
-    store.loading = Promise.all(
-      outward(frame, frames).map(async (i) => {
-        const [b, c] = await Promise.all([
-          fetchBlob(frameUrl(base, id, 'base', i)),
-          fetchBlob(frameUrl(base, id, 'color', i)).catch(() => null), // the ID pass is optional
-        ]);
-        store.base[i] = b;
-        store.color[i] = c;
-        // The current frame shows under the spinner as soon as it's in
-        if (index === phase && i === frame) draw();
-      }),
-    )
-      .catch((err) => console.warn(`Turntable: a frame in phase ${id} failed to load`, err))
-      // Even after a failure: the nearest loaded frames stand in
-      .finally(() => {
-        store.ready = true;
-        if (index === phase) showLoading();
-      });
+    const {first, rest} = loadOrder(frame, frames);
+    store.first = Promise.all(first.map((i) => loadFrame(index, i))).then(() => {
+      store.ready = true;
+      if (index === phase) {
+        showLoading();
+        draw();
+      }
+    });
+    store.loading = store.first.then(() => Promise.all(rest.map((i) => loadFrame(index, i))));
     return store.loading;
   };
 
@@ -263,14 +322,16 @@ export const createTurntable = ({title, turntable: options, tryThis}) => {
   };
 
   // ----- Picking -----
-  // The current frame's ID pass as pixels, read once per frame; null
-  // until it's decoded (ensureColor decodes it)
+  // A frame's ID pass as pixels, read once per frame; null until it's
+  // decoded. Taps and the highlight use the frame on screen (`shown`),
+  // which while frames fill in can be a neighbor of the current angle:
+  // the orange must line up with the picture, not the angle.
   let pickKey = null;
   let pickData = null;
-  const colorData = () => {
-    const key = keyOf(phase, 'color', frame);
+  const pixelsOf = (p, i) => {
+    const key = keyOf(p, 'color', i);
     if (key === pickKey) return pickData;
-    const bitmap = peek(phase, 'color', frame);
+    const bitmap = peek(p, 'color', i);
     if (!bitmap) return null;
     pick.width = bitmap.width;
     pick.height = bitmap.height;
@@ -279,7 +340,8 @@ export const createTurntable = ({title, turntable: options, tryThis}) => {
     pickData = pickCtx.getImageData(0, 0, pick.width, pick.height);
     return pickData;
   };
-  const ensureColor = () => decode(phase, 'color', frame);
+  const colorData = () => shown && pixelsOf(shown.p, shown.i);
+  const ensureColor = () => (shown ? decode(shown.p, 'color', shown.i) : Promise.resolve(null));
 
   const colorAt = (clientX, clientY) => {
     const data = colorData();
@@ -301,8 +363,8 @@ export const createTurntable = ({title, turntable: options, tryThis}) => {
     const data = colorData();
     if (!data) {
       // Not decoded yet: draw it once it is, if still on this frame
-      const at = keyOf(phase, 'color', frame);
-      ensureColor().then(() => at === keyOf(phase, 'color', frame) && colorData() && drawHighlight());
+      const at = shown;
+      ensureColor().then(() => at && at === shown && colorData() && drawHighlight());
       return;
     }
     hi.width = data.width;
@@ -331,7 +393,8 @@ export const createTurntable = ({title, turntable: options, tryThis}) => {
     if (needle) needle.style.transform = `rotate(${-deg}deg)`;
   };
 
-  const paint = (bitmap) => {
+  // Puts frame i of phase p on screen; `shown` remembers which
+  const paint = (bitmap, p, i) => {
     // A bitmap freed by trim() in the meantime has width 0: skip it
     if (!bitmap.width) return;
     if (canvas.width !== bitmap.width) {
@@ -339,9 +402,19 @@ export const createTurntable = ({title, turntable: options, tryThis}) => {
       canvas.height = bitmap.height;
     }
     baseCtx.drawImage(bitmap, 0, 0);
+    if (shown?.p !== p || shown?.i !== i) shown = {p, i};
   };
 
-  // The current frame if it's decoded; if not, it's painted the moment it
+  // The frame nearest i (i itself first) whose file is in; null if none
+  const nearestLoaded = (p, i) => {
+    const files = cache[phases[p]].base;
+    return outward(i, frames).find((k) => files[k]) ?? null;
+  };
+
+  // The target: the current frame, or while fine frames fill in the
+  // nearest one whose file is in (at most COARSE / 2 steps away); before
+  // the phase is ready, only the current frame, so a phase switch never
+  // shows another angle. Painted at once if decoded, else the moment it
   // decodes. While dragging (standIn), the nearest decoded frame a few
   // steps away fills in meanwhile, so a fast drag never stalls. On a
   // phase switch there's no stand-in: another angle would make the model
@@ -350,18 +423,25 @@ export const createTurntable = ({title, turntable: options, tryThis}) => {
   const draw = ({standIn = true} = {}) => {
     const p = phase;
     const i = frame;
-    const exact = peek(p, 'base', i);
+    const target = ready() ? (nearestLoaded(p, i) ?? i) : i;
+    const exact = peek(p, 'base', target);
     if (exact) {
-      paint(exact);
+      paint(exact, p, target);
     } else {
       for (let k = 1; standIn && k <= DECODE_AHEAD; k++) {
-        const near = peek(p, 'base', wrap(i + k, frames)) ?? peek(p, 'base', wrap(i - k, frames));
-        if (near) {
-          paint(near);
+        const ahead = wrap(target + k, frames);
+        const behind = wrap(target - k, frames);
+        const near = peek(p, 'base', ahead) ? ahead : peek(p, 'base', behind) ? behind : null;
+        if (near !== null) {
+          paint(peek(p, 'base', near), p, near);
           break;
         }
       }
-      decode(p, 'base', i).then((bitmap) => bitmap && p === phase && i === frame && paint(bitmap));
+      decode(p, 'base', target).then((bitmap) => {
+        if (!bitmap || p !== phase || i !== frame) return;
+        paint(bitmap, p, target);
+        drawHighlight();
+      });
     }
     for (let k = 1; k <= DECODE_AHEAD; k++) {
       decode(p, 'base', wrap(i + k, frames));
@@ -446,8 +526,8 @@ export const createTurntable = ({title, turntable: options, tryThis}) => {
     warmPhases();
     // A building picked in another phase may not exist in this one
     if (selected) {
-      ensureColor().then(() => {
-        const data = i === phase && selected && colorData();
+      cache[phases[i]].first.then(() => decode(i, 'color', frame)).then(() => {
+        const data = i === phase && selected && pixelsOf(i, frame);
         if (!data) return;
         const d = data.data;
         let found = false;
@@ -523,8 +603,15 @@ export const createTurntable = ({title, turntable: options, tryThis}) => {
   });
 
   // ----- Start -----
-  setPhase(0);
-  // setPhase(0) started the first phase loading. The next phase warms up
+  // On the next frame: the figure is on the page by then, so the stage
+  // has a width to pick the render size from (here it's still 0). The
+  // size is picked once; a resize keeps it (the frames scale).
+  requestAnimationFrame(() => {
+    size = pickSize(stage.clientWidth || window.innerWidth, window.devicePixelRatio || 1, sizes);
+    setPhase(0);
+    startWhenSeen.observe(stage);
+  });
+  // setPhase(0) starts the first phase loading. The next phase warms up
   // quietly once the first is in, but only after the turntable has come
   // near the screen, so a visitor who never scrolls to it pays for one.
   const startWhenSeen = new IntersectionObserver(
@@ -535,7 +622,6 @@ export const createTurntable = ({title, turntable: options, tryThis}) => {
     },
     {rootMargin: '200px'},
   );
-  startWhenSeen.observe(stage);
 
   return el(
     'figure',

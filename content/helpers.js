@@ -153,8 +153,9 @@ export const pageImage = (here, name, alt, widths = PAGE_WIDTHS[name] ?? ALL_WID
 // image per 5° step), optionally in phases (build-out over time). The
 // frames live in img/turntable/ beside the page's index.js, written by
 // tools/turntable_frames.ps1 from the raw renders in img/_raw/turntable/:
-//   img/turntable/phase_a/base_00.jpg   the render
-//   img/turntable/phase_a/color_00.png  ID pass: one flat color per building
+//   img/turntable/phase_a/base_00_640.jpg   the render, one file per size
+//   img/turntable/phase_a/base_00_1024.jpg
+//   img/turntable/phase_a/color_00.png      ID pass: one flat color per building
 // Pass what's particular to this model; TURNTABLE_DEFAULTS fills the rest:
 //   content: {
 //     turntable: turntable(import.meta.url, {
@@ -166,6 +167,8 @@ export const pageImage = (here, name, alt, widths = PAGE_WIDTHS[name] ?? ALL_WID
 // Settings (any of them can be passed to override the default):
 //   frames     frames per full turn
 //   aspect     the frame's shape, a CSS aspect-ratio
+//   sizes      render widths on disk; each screen loads one, the smallest
+//              that covers the frame's width × pixel ratio (capped at 1.5)
 //   clockwise  the frame numbers turn the camera clockwise (seen from above)
 //   controls   phase buttons: 'pills' (filter chips), 'tabs' (View tabs), 'timeline'
 //   drag       'follow': the model moves with the finger; 'reverse'
@@ -183,6 +186,7 @@ export const pageImage = (here, name, alt, widths = PAGE_WIDTHS[name] ?? ALL_WID
 const TURNTABLE_DEFAULTS = {
   frames: 72,
   aspect: '4 / 3',
+  sizes: [640, 1024],
   clockwise: true,
   controls: 'timeline',
   drag: 'follow',
