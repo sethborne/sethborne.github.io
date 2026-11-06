@@ -15,11 +15,13 @@ import ui from '../../content/ui.js';
 // Where a leaf lives, for its card's eyebrow:
 //   ['textile-contacts', 'public-map'] -> 'Washington Textile Survey and Map Tools'
 //   ['textile-resale-economy', 'data-pipeline', 'deduper'] -> 'Washington State Textile Secondary Resale Economy › Data Pipeline'
+//   ['bgi-seaport-square'] -> null: a standalone page lives nowhere, so
+//   its card keeps its own eyebrow (its type) instead of an empty one
 const locationOf = (tree, path) =>
   findTrail(tree, path.slice(0, -1))
     .slice(1)
     .map(({title}) => title)
-    .join(' › ');
+    .join(' › ') || null;
 
 const ALL = {[VIEW_KEY]: ['all']};
 const isEmpty = (query) => Object.keys(query).length === 0;

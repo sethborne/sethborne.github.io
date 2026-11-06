@@ -139,6 +139,22 @@
   margin-bottom: 24px;
 }
 
+/* Sections (a page with several pieces): heading the size of the
+   subhead, an optional intro line, then the piece */
+.page-section + .page-section {
+  margin-top: 56px;
+}
+
+.page-section h2 {
+  font-size: 1.4rem;
+  margin-bottom: 12px;
+}
+
+.page-section-text {
+  max-width: 68ch;
+  margin: 0 0 20px;
+}
+
 .page-head .pills {
   margin-top: 18px;
 }

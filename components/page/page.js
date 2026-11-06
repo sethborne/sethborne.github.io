@@ -8,6 +8,7 @@ import {findTrail, isLeaf} from '../../js/content.js';
 import {createBreadcrumb} from '../breadcrumb/breadcrumb.js';
 import {createCardGrid, labelFor} from '../card/card.js';
 import {createEmbed} from '../embed/embed.js';
+import {createTurntable} from '../turntable/turntable.js';
 import {createWriteup} from '../writeup/writeup.js';
 import ui from '../../content/ui.js';
 
@@ -61,6 +62,24 @@ const layoutOf = (node) => {
   return 'right';
 };
 
+// One piece of a page, from content-style fields: a 3D turntable, a live
+// URL, a link out, or a screenshot. Nothing to show gives null (no frame).
+const renderPiece = (title, fields = {}) => {
+  const {turntable, embed, link, fallback} = fields;
+  if (turntable) return createTurntable({title, ...fields});
+  return (embed || link || fallback) ? createEmbed({title, ...fields}) : null;
+};
+
+// A page's sections (content/helpers.js): heading, optional intro, piece
+const renderSection = ({title, text, ...fields}) =>
+  el(
+    'section',
+    {class: 'page-section'},
+    el('h2', {}, title),
+    text && el('p', {class: 'page-section-text'}, text),
+    renderPiece(title, fields),
+  );
+
 const renderNotFound = (path) => {
   const h1 = heading(ui.page.notFoundTitle);
   return {
@@ -81,9 +100,9 @@ export const createPage = ({tree, path}) => {
   const node = trail.at(-1);
   const h1 = heading(node.title);
   const labels = isLeaf(node) ? tagLabels(node.tags) : [];
-  // Something to show in the frame: a live URL, a link out, a screenshot
-  const {embed, link, fallback} = node.content ?? {};
-  const demo = (embed || link || fallback) && createEmbed({title: node.title, ...node.content});
+  // The page's own frame (content), then any sections, each with a piece
+  const demo = renderPiece(node.title, node.content);
+  const sections = (node.sections ?? []).map(renderSection);
   const {summary, story} = node.writeup ? createWriteup(node.writeup) : {};
   const links =
     node.links?.length > 0 && renderLinks(node.linksTitle ?? ui.page.linksTitle, node.links);
@@ -116,11 +135,13 @@ export const createPage = ({tree, path}) => {
   const inAside = (name) => asideNames.includes(name);
   const asideParts = asideNames.map((name) => movable[name]).filter(Boolean);
 
-  // The main column: demo, story, then links (proof that follows Result)
+  // The main column: demo, sections, story, then links (proof that
+  // follows Result)
   const main = el(
     'div',
     {class: 'page-main'},
     demo,
+    sections,
     !inAside('tldr') && summary,
     story,
     !inAside('links') && links,
