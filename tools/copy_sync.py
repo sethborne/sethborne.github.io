@@ -16,6 +16,11 @@ Doc layout (the guide at the top of every exported doc repeats this):
 - Anything before the first Heading 2 is ignored (title + guide).
 - Heading 2: one field (FIELDS below). Each non-empty paragraph under it
   is one item.
+- Sections nests, like the page's `sections` in index.js: a Heading 3 per
+  section (its heading), then one paragraph of intro (optional), then a
+  Heading 4 per piece with copy (Gallery: one "Title: caption" per image).
+  Bullets, numbers and indents are formatting only; parsing reads the
+  heading levels and the text.
 - Comments and tracked deletions are ignored; tracked insertions count.
 
 Standard library only (zipfile + xml), plus Node to read the site's
@@ -41,14 +46,15 @@ PROJECTS = ROOT / 'content' / 'projects'
 #   list:   always an array
 #   action: array of {lead, text}, split at the first ': '
 #   links:  array of {label, href}, from Word hyperlinks
-#   titled: array of {title, text?}: "Title" or "Title: text". Sections:
-#           a heading + intro per section; Gallery: a title + caption per
-#           image. Both in the order index.js lists them
+#   titled: array of {title, text?}: "Title" or "Title: text". Gallery: a
+#           title + caption per image, in the order index.js lists them
+#   sections: array of {title, text?, <piece copy>}, nested (see below)
 FIELDS = [
     ('Title', 'title', 'text'),
     ('Summary', 'summary', 'text'),
     ('Try This', 'content.tryThis', 'text'),
-    ('Sections', 'sections', 'titled'),
+    ('Sections', 'sections', 'sections'),
+    # The page's own gallery (content.gallery); a section's goes under it
     ('Gallery', 'gallery', 'titled'),
     ('Open Label', 'content.openLabel', 'text'),
     ('Links Title', 'linksTitle', 'text'),
@@ -62,6 +68,14 @@ FIELDS = [
 ]
 FIELD_BY_HEADING = {heading.lower(): (key, kind) for heading, key, kind in FIELDS}
 FIELD_NAMES = ', '.join(heading for heading, _, _ in FIELDS)
+# Inside Sections, the Heading 4s a section may hold: its piece's copy.
+# Sections pair with index.js's `sections` by position, and each piece's
+# items with that piece's list (a gallery's images) by position.
+SECTION_PIECES = [
+    ('Gallery', 'gallery', 'titled'),
+]
+PIECE_BY_HEADING = {heading.lower(): (key, kind) for heading, key, kind in SECTION_PIECES}
+PIECE_NAMES = ', '.join(heading for heading, _, _ in SECTION_PIECES)
 # Skeleton for a new page's doc
 NEW_PAGE_FIELDS = ['title', 'summary']
 
@@ -220,12 +234,29 @@ def to_value(kind, items, where):
     raise ValueError(kind)
 
 
+def to_sections(found, where):
+    """Parsed Sections entries -> [{title, text?, gallery?: [...]}]."""
+    out = []
+    for section in found:
+        title, intro, pieces = section['title'], section['intro'], section['pieces']
+        if len(intro) > 1:
+            raise CopyError(f'{where} / {title!r}: one intro paragraph per section, found {len(intro)}')
+        entry = {'title': title, **({'text': intro[0]} if intro else {})}
+        for key, (kind, items) in pieces.items():
+            if items:
+                entry[key] = to_value(kind, items, f'{where} / {title!r} / {key}')
+        out.append(entry)
+    return out
+
+
 def parse(paragraphs, where):
     """One page's doc -> flat fields {'title': ..., 'writeup.tldr': [...]}."""
     errors, items = [], {}
     field = None  # None until the first Heading 2: title + guide are ignored
+    piece = None  # inside Sections: the current Heading 4's key, or None for the intro
     for style, text, href in paragraphs:
         if style == 'Heading2':
+            piece = None
             match = FIELD_BY_HEADING.get(text.strip().lower())
             if not match:
                 errors.append(f'{where}: unknown field {text!r} (use one of: {FIELD_NAMES})')
@@ -236,15 +267,45 @@ def parse(paragraphs, where):
                 errors.append(f'{where}: field {text!r} appears twice')
             field = key
             items[key] = (kind, [])
+        elif field == 'sections' and style == 'Heading3':
+            # A new section: its heading; the intro and pieces follow
+            items['sections'][1].append({'title': text.strip(), 'intro': [], 'pieces': {}})
+            piece = None
+        elif field == 'sections' and style == 'Heading4':
+            sections = items['sections'][1]
+            match = PIECE_BY_HEADING.get(text.strip().lower())
+            if not sections:
+                errors.append(f'{where}: {text!r} (Heading 4) comes before any section (Heading 3)')
+                piece = 'unknown'
+            elif not match:
+                errors.append(f'{where} / {sections[-1]["title"]!r}: unknown piece {text!r} (use one of: {PIECE_NAMES})')
+                piece = 'unknown'
+            else:
+                key, kind = match
+                if key in sections[-1]['pieces']:
+                    errors.append(f'{where} / {sections[-1]["title"]!r}: {text!r} appears twice')
+                sections[-1]['pieces'][key] = (kind, [])
+                piece = key
         elif style.startswith('Heading') and field is not None:
-            errors.append(f'{where}: {text!r} uses {style}; fields are Heading 2, the rest is Normal text')
+            nested = ' (Heading 3 and 4 only inside Sections)' if style in ('Heading3', 'Heading4') else ''
+            errors.append(f'{where}: {text!r} uses {style}; fields are Heading 2, the rest is Normal text{nested}')
+        elif field == 'sections' and text:
+            sections = items['sections'][1]
+            if not sections:
+                errors.append(f'{where} / sections: {text!r} comes before any section; Sections uses a Heading 3 per section (its heading), then its intro and pieces')
+                field = 'unknown'  # one error, not one per line
+            elif piece is None:
+                sections[-1]['intro'].append(text)
+            elif piece != 'unknown':
+                sections[-1]['pieces'][piece][1].append((text, href))
         elif field not in (None, 'unknown') and text:
             items[field][1].append((text, href))
     fields = {}
     for key, (kind, found) in items.items():
         if found:
             try:
-                fields[key] = to_value(kind, found, f'{where} / {key}')
+                at = f'{where} / {key}'
+                fields[key] = to_sections(found, at) if kind == 'sections' else to_value(kind, found, at)
             except CopyError as e:
                 errors.append(str(e))
     if errors:
@@ -327,12 +388,17 @@ const walk = (node, path) => {
   const {tryThis, openLabel} = node.content ?? {};
   const content = Object.fromEntries(Object.entries({tryThis, openLabel}).filter(([, v]) => v !== undefined));
   if (Object.keys(content).length) copy.content = content;
-  // Sections: only their copy (heading, intro); the pieces stay in index.js
-  const sections = (node.sections ?? []).filter((s) => s.title).map(({title, text}) => (text ? {title, text} : {title}));
+  // A gallery's copy: each image's title and caption
+  const captionsOf = (gallery) =>
+    (gallery?.images ?? []).filter((image) => image.title).map(({title, text}) => (text ? {title, text} : {title}));
+  // Sections: only their copy (heading, intro, piece copy); the pieces stay in index.js
+  const sections = (node.sections ?? []).filter((s) => s.title).map(({title, text, gallery}) => {
+    const captions = captionsOf(gallery);
+    return {title, ...(text && {text}), ...(captions.length && {gallery: captions})};
+  });
   if (sections.length) copy.sections = sections;
-  // Gallery: the titles and captions of the page's (first) gallery
-  const gallery = [node.content, ...(node.sections ?? [])].find((piece) => piece?.gallery)?.gallery;
-  const captions = (gallery?.images ?? []).filter((image) => image.title).map(({title, text}) => (text ? {title, text} : {title}));
+  // The page's own gallery (content.gallery)
+  const captions = captionsOf(node.content?.gallery);
   if (captions.length) copy.gallery = captions;
   pages.push({path, copy});
   for (const child of node.children ?? []) walk(child, [...path, child.id]);
@@ -388,11 +454,16 @@ def lint(where, fields):
             if lower:
                 warnings.append(f'{where} / {key}: not Title Case ({", ".join(lower)}): {text}')
     # Section headings and image titles are titles; their text is a sentence
-    for key in ('sections', 'gallery'):
-        for item in fields.get(key, []):
-            lower = not_title_case(item['title'])
-            if lower:
-                warnings.append(f'{where} / {key}: not Title Case ({", ".join(lower)}): {item["title"]}')
+    titled = [('gallery', item) for item in fields.get('gallery', [])]
+    for section in fields.get('sections', []):
+        titled.append(('sections', section))
+        for _, key, kind in SECTION_PIECES:
+            if kind == 'titled':
+                titled += [(f'sections / {section["title"]} / {key}', item) for item in section.get(key, [])]
+    for at, item in titled:
+        lower = not_title_case(item['title'])
+        if lower:
+            warnings.append(f'{where} / {at}: not Title Case ({", ".join(lower)}): {item["title"]}')
     return warnings
 
 
@@ -412,13 +483,23 @@ def run(text, bold=False, style=None):
     return f'<w:r>{rpr}<w:t xml:space="preserve">{escape(text)}</w:t></w:r>'
 
 
-def para(content, style=None):
-    ppr = f'<w:pPr><w:pStyle w:val="{style}"/></w:pPr>' if style else ''
+def para(content, style=None, num=None):
+    """One paragraph; `num` puts it in that numbered list (its own count)."""
+    numpr = f'<w:numPr><w:ilvl w:val="0"/><w:numId w:val="{num}"/></w:numPr>' if num else ''
+    ppr = f'<w:pPr><w:pStyle w:val="{style}"/>{numpr}</w:pPr>' if style else ''
     return f'<w:p>{ppr}{content}</w:p>'
 
 
-def doc_body(folder, flat, add_link):
-    """Paragraph XML for one page's doc: title, guide, then its fields."""
+def titled_para(item, style, num=None):
+    """"Title: text" with the title in bold."""
+    text = item.get('text')
+    title = run(curly(item['title']) + (':' if text else ''), bold=True)
+    return para(title + (run(' ' + curly(text)) if text else ''), style, num)
+
+
+def doc_body(folder, flat, add_link, new_list):
+    """Paragraph XML for one page's doc: title, guide, then its fields.
+    new_list() returns a fresh numbered list id, so each list counts from 1."""
     project = page_path(folder)[0]
     guide = [
         f'Site copy for the page #/{"/".join(page_path(folder))}. This doc is the source of truth: edit it here, then run',
@@ -426,8 +507,9 @@ def doc_body(folder, flat, add_link):
         f'Each Heading 2 is a field: {FIELD_NAMES}. Each paragraph under it is one item. '
         'Add a field by adding its heading; delete the heading and its text to remove it.',
         'Action items are "Lead: text". Links are hyperlinks: the text is the button label.',
-        'Sections items are "Heading" or "Heading: intro text", one per section, in page order.',
-        'Gallery items are "Title" or "Title: caption", one per image, in gallery order.',
+        'Sections: a Heading 3 per section (its heading), in page order; under it one paragraph of intro (optional), '
+        'then a Heading 4 per piece with copy: Gallery.',
+        'Gallery items are "Title" or "Title: caption", one per image, in gallery order (the numbers match the images list).',
         'Comments are ignored, so use them for notes. Tracked changes are fine: insertions count, deletions don’t.',
     ]
     out = [para(run(label(folder)), 'Title')]
@@ -437,13 +519,25 @@ def doc_body(folder, flat, add_link):
             continue
         value = flat[key]
         out.append(para(run(heading), 'Heading2'))
+        if kind == 'sections':
+            # Nested like index.js: section heading, intro, then each piece's items
+            for section in value:
+                out.append(para(run(curly(section['title'])), 'Heading3'))
+                if section.get('text'):
+                    out.append(para(run(curly(section['text'])), 'SectionText'))
+                for piece_heading, piece_key, _ in SECTION_PIECES:
+                    if piece_key in section:
+                        out.append(para(run(piece_heading), 'Heading4'))
+                        num = new_list()
+                        out += [titled_para(item, 'ListNumber', num) for item in section[piece_key]]
+            continue
+        num = new_list() if kind == 'titled' else None
         items = value if isinstance(value, list) else [value]
         for item in items:
             if kind == 'action':
                 out.append(para(run(curly(item['lead']) + ':', bold=True) + run(' ' + curly(item['text'])), 'ListBullet'))
             elif kind == 'titled':
-                text = item.get('text')
-                out.append(para(run(curly(item['title']) + (':' if text else ''), bold=True) + (run(' ' + curly(text)) if text else ''), 'ListBullet'))
+                out.append(titled_para(item, 'ListNumber', num))
             elif kind == 'links':
                 rid = add_link(item['href'])
                 link = f'<w:hyperlink r:id="{rid}">{run(curly(item["label"]), style="Hyperlink")}</w:hyperlink>'
@@ -464,14 +558,35 @@ STYLES = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:style w:type="paragraph" w:styleId="Guide"><w:name w:val="Guide"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="60"/></w:pPr><w:rPr><w:i/><w:color w:val="808080"/><w:sz w:val="20"/></w:rPr></w:style>
 <w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="320" w:after="80"/><w:outlineLvl w:val="1"/></w:pPr><w:rPr><w:b/><w:color w:val="CC7A00"/><w:sz w:val="26"/></w:rPr></w:style>
 <w:style w:type="paragraph" w:styleId="ListBullet"><w:name w:val="List Bullet"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:numPr><w:numId w:val="1"/></w:numPr><w:spacing w:after="80"/></w:pPr></w:style>
+<w:style w:type="paragraph" w:styleId="Heading3"><w:name w:val="heading 3"/><w:basedOn w:val="Normal"/><w:next w:val="SectionText"/><w:qFormat/><w:pPr><w:keepNext/><w:numPr><w:numId w:val="2"/></w:numPr><w:spacing w:before="200" w:after="60"/><w:outlineLvl w:val="2"/></w:pPr><w:rPr><w:b/><w:color w:val="3C3F45"/><w:sz w:val="24"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="SectionText"><w:name w:val="Section Text"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:ind w:left="1080"/></w:pPr></w:style>
+<w:style w:type="paragraph" w:styleId="Heading4"><w:name w:val="heading 4"/><w:basedOn w:val="Normal"/><w:next w:val="ListNumber"/><w:qFormat/><w:pPr><w:keepNext/><w:ind w:left="1080"/><w:spacing w:before="120" w:after="60"/><w:outlineLvl w:val="3"/></w:pPr><w:rPr><w:b/><w:color w:val="808080"/><w:sz w:val="22"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="ListNumber"><w:name w:val="List Number"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:numPr><w:numId w:val="3"/></w:numPr><w:spacing w:after="80"/></w:pPr></w:style>
 <w:style w:type="character" w:styleId="Hyperlink"><w:name w:val="Hyperlink"/><w:rPr><w:color w:val="CC7A00"/><w:u w:val="single"/></w:rPr></w:style>
 </w:styles>""".replace('{W}', W)
 
-NUMBERING = f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:numbering xmlns:w="{W}">
-<w:abstractNum w:abstractNumId="0"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="360" w:hanging="360"/></w:pPr></w:lvl></w:abstractNum>
-<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>
-</w:numbering>"""
+# Lists: 1 = bullets (list fields), 2 = section heading bullets (Heading 3),
+# 3 and up = numbered lists (gallery items), one per list, each restarting
+# at 1. Word types a new List Number paragraph into list 3 by default.
+FIRST_NUMBERED = 3
+
+
+def numbering_xml(numbered_lists):
+    nums = ''.join(
+        f'<w:num w:numId="{n}"><w:abstractNumId w:val="2"/>'
+        f'<w:lvlOverride w:ilvl="0"><w:startOverride w:val="1"/></w:lvlOverride></w:num>'
+        for n in range(FIRST_NUMBERED, FIRST_NUMBERED + max(numbered_lists, 1))
+    )
+    return (
+        f'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        f'<w:numbering xmlns:w="{W}">'
+        f'<w:abstractNum w:abstractNumId="0"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="360" w:hanging="360"/></w:pPr></w:lvl></w:abstractNum>'
+        f'<w:abstractNum w:abstractNumId="1"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr></w:lvl></w:abstractNum>'
+        f'<w:abstractNum w:abstractNumId="2"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="1800" w:hanging="360"/></w:pPr></w:lvl></w:abstractNum>'
+        f'<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>'
+        f'<w:num w:numId="2"><w:abstractNumId w:val="1"/></w:num>'
+        f'{nums}</w:numbering>'
+    )
 
 CONTENT_TYPES = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
@@ -495,7 +610,13 @@ def write_docx(path, folder, flat):
         links.append(href)
         return f'rIdLink{len(links)}'
 
-    body = doc_body(folder, flat, add_link)
+    numbered = []
+
+    def new_list():
+        numbered.append(FIRST_NUMBERED + len(numbered))
+        return numbered[-1]
+
+    body = doc_body(folder, flat, add_link, new_list)
     document = (
         f'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
         f'<w:document xmlns:w="{W}" xmlns:r="{R}"><w:body>{body}'
@@ -520,7 +641,7 @@ def write_docx(path, folder, flat):
         z.writestr('_rels/.rels', PACKAGE_RELS)
         z.writestr('word/document.xml', document)
         z.writestr('word/styles.xml', STYLES)
-        z.writestr('word/numbering.xml', NUMBERING)
+        z.writestr('word/numbering.xml', numbering_xml(len(numbered)))
         z.writestr('word/_rels/document.xml.rels', doc_rels)
 
 

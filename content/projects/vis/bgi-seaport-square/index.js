@@ -2,9 +2,10 @@
 // the Boston waterfront (2016, collateral for an iPad app). One page in
 // sections: still renderings (a gallery) and a phased massing model as a
 // turntable. Standalone page, #/bgi-seaport-square.
-// Copy: bgi-seaport-square.docx -> copy.js (tools/copy_sync.py); section
-// headings come from its Sections field, in the order listed here, and
-// image titles and captions from its Gallery field, in image order.
+// Copy: bgi-seaport-square.docx -> copy.js (tools/copy_sync.py). Its
+// Sections field has a Heading 3 per section, in the order listed here;
+// image titles and captions go under the section's Heading 4 Gallery,
+// in image order.
 // Frames: npm run turntable (raw renders in img/_raw/turntable/).
 // Stills: npm run gallery (full-size exports in img/_raw/gallery/).
 

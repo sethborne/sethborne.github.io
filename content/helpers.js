@@ -84,22 +84,28 @@ export const fromCopy = (copy) => {
     const {title = id, content: copyContent, sections: copySections = [], gallery: copyGallery = [], ...fields} = copy;
     if (!copy.title) console.warn(`No title for page "${id}" in its copy.js`);
     // A gallery's titles and captions pair up with its images by
-    // position, like sections below (one Gallery field per page)
-    const withCaptions = (piece) => {
+    // position. `where` names it in the warning.
+    const withCaptions = (piece, captions, where) => {
       if (!piece?.gallery) return piece;
       const {images} = piece.gallery;
-      if (images.length !== copyGallery.length) {
-        console.warn(`Page "${id}": ${images.length} gallery images in index.js, ${copyGallery.length} in its doc`);
+      if (images.length !== captions.length) {
+        console.warn(`Page "${id}"${where}: ${images.length} gallery images in index.js, ${captions.length} in its doc`);
       }
-      return {...piece, gallery: {...piece.gallery, images: images.map((image, i) => ({...copyGallery[i], ...image}))}};
+      return {...piece, gallery: {...piece.gallery, images: images.map((image, i) => ({...captions[i], ...image}))}};
     };
-    const content = (copyContent || more.content) && withCaptions({...copyContent, ...more.content});
-    // Sections pair up by position: the doc's first heading goes with
-    // index.js's first section, and so on
+    // The page's own gallery: the doc's top-level Gallery field
+    const content = (copyContent || more.content) && withCaptions({...copyContent, ...more.content}, copyGallery, '');
+    // Sections pair up by position: the doc's first section (Heading 3)
+    // goes with index.js's first section, and so on. Each carries its own
+    // gallery captions, taken out first so index.js's gallery isn't replaced.
     if (more.sections && more.sections.length !== copySections.length) {
       console.warn(`Page "${id}": ${more.sections.length} sections in index.js, ${copySections.length} in its doc`);
     }
-    const sections = more.sections?.map((section, i) => withCaptions({...copySections[i], ...section}));
+    const sections = more.sections?.map((section, i) => {
+      const {gallery: captions = [], ...copyFields} = copySections[i] ?? {};
+      const merged = {...copyFields, ...section};
+      return withCaptions(merged, captions, `, section "${merged.title ?? section.id}"`);
+    });
     return [title, {...fields, ...more, ...(content && {content}), ...(sections && {sections})}];
   };
   return {
@@ -118,7 +124,8 @@ export const fromCopy = (copy) => {
 // lists them in `sections`, each rendered as a heading, an optional
 // intro line, and its piece. A section takes the same fields as
 // `content` (turntable, embed, link, fallback, tryThis...); its heading
-// and intro come from the doc's Sections field, matched by position:
+// and intro come from the doc's Sections field (a Heading 3 per section),
+// matched by position:
 //   sections: [
 //     {id: 'phasing-model', turntable: turntable(import.meta.url, {...})},
 //   ]
@@ -230,8 +237,9 @@ export const turntable = (here, {phases, heading, alt, ...more}) => ({
 //   gallery: gallery(import.meta.url, {
 //     images: ['aerial_look_sw', {name: 'plaza_square', focus: 'center 70%'}],
 //   })
-// Titles and captions come from the doc's Gallery field ("Title" or
-// "Title: caption", one line per image), through fromCopy().
+// Titles and captions come from the doc ("Title" or "Title: caption",
+// one line per image): under the section's Heading 4 Gallery, or the
+// top-level Gallery field for content.gallery; through fromCopy().
 // Settings (any of them can be passed to override the default):
 //   columns        grid columns on tablets and up, to start with
 //   columnChoices  the column control's buttons (600px and up)
