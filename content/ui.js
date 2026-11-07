@@ -69,6 +69,13 @@ export default {
     result: 'Result',
   },
   about: {photoComing: 'Photo Coming'},
+  // Image gallery (components/gallery/): column control, lightbox
+  gallery: {
+    columns: 'Columns',
+    fullSize: 'View Full Size',
+    // Read out as the lightbox moves (the bar or dots show it on screen)
+    position: (i, count) => `Image ${i} of ${count}`,
+  },
   // 3D turntable (components/turntable/): phase buttons, hint, corner badge
   turntable: {
     phases: 'Phase',

@@ -41,13 +41,15 @@ PROJECTS = ROOT / 'content' / 'projects'
 #   list:   always an array
 #   action: array of {lead, text}, split at the first ': '
 #   links:  array of {label, href}, from Word hyperlinks
-#   section: array of {title, text?}: "Heading" or "Heading: intro text",
-#           in the order of the page's sections in index.js
+#   titled: array of {title, text?}: "Title" or "Title: text". Sections:
+#           a heading + intro per section; Gallery: a title + caption per
+#           image. Both in the order index.js lists them
 FIELDS = [
     ('Title', 'title', 'text'),
     ('Summary', 'summary', 'text'),
     ('Try This', 'content.tryThis', 'text'),
-    ('Sections', 'sections', 'section'),
+    ('Sections', 'sections', 'titled'),
+    ('Gallery', 'gallery', 'titled'),
     ('Open Label', 'content.openLabel', 'text'),
     ('Links Title', 'linksTitle', 'text'),
     ('Links', 'links', 'links'),
@@ -202,7 +204,7 @@ def to_value(kind, items, where):
                 raise CopyError(f'{where}: Action item needs "Lead: text": {text!r}')
             out.append({'lead': lead, 'text': rest})
         return out
-    if kind == 'section':
+    if kind == 'titled':
         out = []
         for text, _ in items:
             title, sep, rest = text.partition(': ')
@@ -328,6 +330,10 @@ const walk = (node, path) => {
   // Sections: only their copy (heading, intro); the pieces stay in index.js
   const sections = (node.sections ?? []).filter((s) => s.title).map(({title, text}) => (text ? {title, text} : {title}));
   if (sections.length) copy.sections = sections;
+  // Gallery: the titles and captions of the page's (first) gallery
+  const gallery = [node.content, ...(node.sections ?? [])].find((piece) => piece?.gallery)?.gallery;
+  const captions = (gallery?.images ?? []).filter((image) => image.title).map(({title, text}) => (text ? {title, text} : {title}));
+  if (captions.length) copy.gallery = captions;
   pages.push({path, copy});
   for (const child of node.children ?? []) walk(child, [...path, child.id]);
 };
@@ -381,11 +387,12 @@ def lint(where, fields):
             lower = key in TITLE_CASE_KEYS and not_title_case(text)
             if lower:
                 warnings.append(f'{where} / {key}: not Title Case ({", ".join(lower)}): {text}')
-    # Section headings are headings; their intro text is a sentence
-    for item in fields.get('sections', []):
-        lower = not_title_case(item['title'])
-        if lower:
-            warnings.append(f'{where} / sections: not Title Case ({", ".join(lower)}): {item["title"]}')
+    # Section headings and image titles are titles; their text is a sentence
+    for key in ('sections', 'gallery'):
+        for item in fields.get(key, []):
+            lower = not_title_case(item['title'])
+            if lower:
+                warnings.append(f'{where} / {key}: not Title Case ({", ".join(lower)}): {item["title"]}')
     return warnings
 
 
@@ -420,6 +427,7 @@ def doc_body(folder, flat, add_link):
         'Add a field by adding its heading; delete the heading and its text to remove it.',
         'Action items are "Lead: text". Links are hyperlinks: the text is the button label.',
         'Sections items are "Heading" or "Heading: intro text", one per section, in page order.',
+        'Gallery items are "Title" or "Title: caption", one per image, in gallery order.',
         'Comments are ignored, so use them for notes. Tracked changes are fine: insertions count, deletions don’t.',
     ]
     out = [para(run(label(folder)), 'Title')]
@@ -433,7 +441,7 @@ def doc_body(folder, flat, add_link):
         for item in items:
             if kind == 'action':
                 out.append(para(run(curly(item['lead']) + ':', bold=True) + run(' ' + curly(item['text'])), 'ListBullet'))
-            elif kind == 'section':
+            elif kind == 'titled':
                 text = item.get('text')
                 out.append(para(run(curly(item['title']) + (':' if text else ''), bold=True) + (run(' ' + curly(text)) if text else ''), 'ListBullet'))
             elif kind == 'links':

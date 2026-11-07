@@ -81,15 +81,25 @@ export const detailPage = (id, title, tags, more = {}) => ({
 export const fromCopy = (copy) => {
   // [title, more with the copy fields under it]
   const fill = (id, more = {}) => {
-    const {title = id, content: copyContent, sections: copySections = [], ...fields} = copy;
+    const {title = id, content: copyContent, sections: copySections = [], gallery: copyGallery = [], ...fields} = copy;
     if (!copy.title) console.warn(`No title for page "${id}" in its copy.js`);
-    const content = (copyContent || more.content) && {...copyContent, ...more.content};
+    // A gallery's titles and captions pair up with its images by
+    // position, like sections below (one Gallery field per page)
+    const withCaptions = (piece) => {
+      if (!piece?.gallery) return piece;
+      const {images} = piece.gallery;
+      if (images.length !== copyGallery.length) {
+        console.warn(`Page "${id}": ${images.length} gallery images in index.js, ${copyGallery.length} in its doc`);
+      }
+      return {...piece, gallery: {...piece.gallery, images: images.map((image, i) => ({...copyGallery[i], ...image}))}};
+    };
+    const content = (copyContent || more.content) && withCaptions({...copyContent, ...more.content});
     // Sections pair up by position: the doc's first heading goes with
     // index.js's first section, and so on
     if (more.sections && more.sections.length !== copySections.length) {
       console.warn(`Page "${id}": ${more.sections.length} sections in index.js, ${copySections.length} in its doc`);
     }
-    const sections = more.sections?.map((section, i) => ({...copySections[i], ...section}));
+    const sections = more.sections?.map((section, i) => withCaptions({...copySections[i], ...section}));
     return [title, {...fields, ...more, ...(content && {content}), ...(sections && {sections})}];
   };
   return {
@@ -152,7 +162,7 @@ export const pageImage = (here, name, alt, widths = PAGE_WIDTHS[name] ?? ALL_WID
 // A turntable: a 3D model you drag to turn, from rendered frames (one
 // image per 5° step), optionally in phases (build-out over time). The
 // frames live in img/turntable/ beside the page's index.js, written by
-// tools/turntable_frames.ps1 from the raw renders in img/_raw/turntable/:
+// tools/turntable_frames.mjs from the raw renders in img/_raw/turntable/:
 //   img/turntable/phase_a/base_00_640.jpg   the render, one file per size
 //   img/turntable/phase_a/base_00_1024.jpg
 //   img/turntable/phase_a/color_00.png      ID pass: one flat color per building
@@ -204,6 +214,56 @@ export const turntable = (here, {phases, heading, alt, ...more}) => ({
   phases,
   heading,
   alt,
+  ...more,
+});
+
+// A gallery: a grid of still images (renderings, photosims) that open
+// in a lightbox. The files live in img/gallery/ beside the page's
+// index.js, written by tools/gallery_images.mjs from one full-size
+// export each in img/_raw/gallery/:
+//   img/gallery/aerial_look_sw_800.jpg ... _2560.jpg   grid + lightbox
+//   img/gallery/aerial_look_sw_full.jpg                native size ("View Full Size")
+// List the images by name, in order (grid, lightbox and the doc's
+// Gallery lines all follow it). A name alone, or {name, focus} to frame
+// a crop in the grid (CSS object-position, e.g. 'center 30%'; the
+// lightbox always shows the whole image):
+//   gallery: gallery(import.meta.url, {
+//     images: ['aerial_look_sw', {name: 'plaza_square', focus: 'center 70%'}],
+//   })
+// Titles and captions come from the doc's Gallery field ("Title" or
+// "Title: caption", one line per image), through fromCopy().
+// Settings (any of them can be passed to override the default):
+//   columns        grid columns on tablets and up, to start with
+//   columnChoices  the column control's buttons (600px and up)
+//   phoneColumns   grid columns on phones (no control there)
+//   aspect         the thumbs' shape, a CSS aspect-ratio (crops with cover)
+//   columnControl  'icons' (little grid drawings) or 'tabs' (View tab look)
+//   thumbHover     'lift' (like cards: lift, orange glow, orange name) or
+//                  'zoom' (orange ring, image zooms in)
+//   position       lightbox: 'bar' (a track you can drag along) or 'dots'
+//   barFill        bar: orange from the start up to the current image
+//   ticks          bar: a mark for each image
+//   tickShape      'diamond' or 'dot'
+//   tickSize       tick size in px
+//   widths         export widths on disk (the _full file is extra)
+const GALLERY_DEFAULTS = {
+  columns: 4,
+  columnChoices: [2, 3, 4],
+  phoneColumns: 2,
+  aspect: '4 / 3',
+  columnControl: 'icons',
+  thumbHover: 'lift',
+  position: 'bar',
+  barFill: true,
+  ticks: true,
+  tickShape: 'diamond',
+  tickSize: 6,
+  widths: [800, 1280, 1600, 2560],
+};
+export const gallery = (here, {images, ...more}) => ({
+  ...GALLERY_DEFAULTS,
+  base: new URL('img/gallery/', here).href,
+  images: images.map((image) => (typeof image === 'string' ? {name: image} : image)),
   ...more,
 });
 

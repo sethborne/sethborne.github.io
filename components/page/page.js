@@ -8,6 +8,7 @@ import {findTrail, isLeaf} from '../../js/content.js';
 import {createBreadcrumb} from '../breadcrumb/breadcrumb.js';
 import {createCardGrid, labelFor} from '../card/card.js';
 import {createEmbed} from '../embed/embed.js';
+import {createGallery} from '../gallery/gallery.js';
 import {createTurntable} from '../turntable/turntable.js';
 import {createWriteup} from '../writeup/writeup.js';
 import ui from '../../content/ui.js';
@@ -62,10 +63,12 @@ const layoutOf = (node) => {
   return 'right';
 };
 
-// One piece of a page, from content-style fields: a 3D turntable, a live
-// URL, a link out, or a screenshot. Nothing to show gives null (no frame).
+// One piece of a page, from content-style fields: an image gallery, a 3D
+// turntable, a live URL, a link out, or a screenshot. Nothing to show
+// gives null (no frame).
 const renderPiece = (title, fields = {}) => {
-  const {turntable, embed, link, fallback} = fields;
+  const {gallery, turntable, embed, link, fallback} = fields;
+  if (gallery) return createGallery({title, gallery});
   if (turntable) return createTurntable({title, ...fields});
   return (embed || link || fallback) ? createEmbed({title, ...fields}) : null;
 };
