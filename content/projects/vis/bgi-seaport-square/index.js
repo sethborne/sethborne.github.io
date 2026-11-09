@@ -20,7 +20,6 @@ import {
   VIEW_INTERIOR,
   USE_BUSINESS,
   USE_MIXED_USE,
-  USE_PARK,
   USE_RESIDENTIAL,
   USE_WATERFRONT,
   USE_RETAIL,
@@ -36,19 +35,22 @@ export default fromCopy(copy).detailPage(
   [TYPE_RENDERINGS, TYPE_INTERACTIVE_MODEL, TOOL_3DS_MAX, TOOL_VRAY, TOOL_AFTER_EFFECTS, TOOL_PHOTOSHOP],
   {
     layout: 'full',
-    // img/thumb_<width>.jpg in this folder: the full build-out, frame 0
-    thumb: pageImage(import.meta.url, 'thumb', 'Massing model of Seaport Square, fully built out'),
+    // The card shows a gallery still (its 800 and 1280 sizes), not a
+    // copy, so re-exporting the still updates the card too. The turntable
+    // tool still writes img/thumb_*.jpg (frame 0); point back at 'thumb'
+    // to use that instead.
+    thumb: pageImage(import.meta.url, 'gallery/bgi_aerial_sw', 'Aerial rendering of Seaport Square, looking southwest', [800, 1280]),
     sections: [
-      // TEMP: stand-in images (gitignored) until the real stills are exported
       {
         id: 'renderings',
         gallery: gallery(import.meta.url, {
           aspect: '3 / 2',
-          // Chip rows from each image's tags (content/gallery-tags.js). With
-          // only aerial renderings so far, just the Use row shows.
+          // Chip rows from each image's tags (content/gallery-tags.js): Type,
+          // View and Use all show, since each has two or more terms in use.
           filter: true,
-          // Grid order = lightbox order = the doc's Gallery lines. The
-          // squares get a focus, since the grid crops them to 3:2.
+          // Grid order = lightbox order = the doc's Gallery lines. `focus`
+          // frames an image's 3:2 crop in the grid (CSS object-position);
+          // the lightbox shows the whole image.
           // TEMP: the USE_ tags are placeholder guesses; Seth corrects them
           images: [
             {name: 'bgi_aerial_ne', tags: [MEDIA_RENDERING, MEDIA_PHOTOSIM, VIEW_AERIAL, USE_BUSINESS, USE_RESIDENTIAL, USE_WATERFRONT, USE_MIXED_USE]},
