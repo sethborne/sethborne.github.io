@@ -238,6 +238,92 @@
   text-underline-offset: 4px;
 }
 
+/* Back to Top (page.js addBackUp): at the right end of each section
+   heading, on pages with jump links. The heading becomes a row: text
+   left (wraps on phones), button right. Gray like the heading at rest,
+   orange on hover, like card art and the other hovers. Three looks
+   (PAGE_DEFAULTS.backUp in content/helpers.js), one class each. */
+.page-section h2:has(.page-back-up) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.page-back-up {
+  /* Chevron size and line weight, shared by all three looks */
+  --chevron: 10.5px;
+  --chevron-line: 2px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .page-back-up:hover {
+    color: var(--accent);
+  }
+}
+
+/* Shaped element: keep an outline that follows its shape */
+.page-back-up:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Drawn like .page-jump-chevron (a square's two borders), turned to
+   point up; nudged down, since a turned square's point sits high */
+.page-back-up-chevron {
+  width: var(--chevron);
+  height: var(--chevron);
+  border-right: var(--chevron-line) solid currentColor;
+  border-bottom: var(--chevron-line) solid currentColor;
+  transform: translateY(calc(var(--chevron) * 0.25)) rotate(-135deg);
+}
+
+/* 'chevron': the chevron alone in a 40px target; negative margins keep
+   the target from making the heading taller or pushing it in */
+.page-back-up--chevron {
+  width: 40px;
+  height: 40px;
+  margin: -8px -12px -8px 0;
+}
+
+/* 'text': "Top" in the mono link look (View Full Size), then the chevron */
+.page-back-up--text {
+  height: 40px;
+  margin: -8px 0;
+}
+
+.page-back-up-text {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+/* 'square': the chevron in an outlined square, the shaped-button look;
+   the border turns orange with the chevron */
+.page-back-up--square {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+}
+
+@media (hover: hover) {
+  .page-back-up--square:hover {
+    border-color: var(--accent);
+  }
+}
+
 .page-section-text {
   max-width: 68ch;
   margin: 0 0 20px;
