@@ -57,6 +57,8 @@ export default {
     linksTitle: 'Links',
     // Between a writeup and the child cards below it
     childrenTitle: 'In This Project',
+    // Under the tags of a page with two or more sections: links down to each
+    jumpLabel: 'On This Page',
     notFoundTitle: 'Page Not Found',
     notFoundText: (path) => `Nothing lives at #/${path}.`,
     notFoundBack: 'Back to Projects',
