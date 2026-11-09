@@ -29,5 +29,6 @@ export const TOOL_VRAY = tool('v-ray', 'V-Ray');
 export const TYPE_DATA_PIPELINE = type('data-pipeline', 'Data Pipeline');
 export const TYPE_FORM = type('form', 'Form');
 export const TYPE_INTERACTIVE_MODEL = type('interactive-model', 'Interactive Model');
+export const TYPE_RENDERINGS = type('renderings', 'Renderings');
 export const TYPE_REVIEW_TOOL = type('review-tool', 'Review Tool');
 export const TYPE_WEB_APP = type('web-app', 'Web App');

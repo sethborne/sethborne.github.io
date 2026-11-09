@@ -57,6 +57,8 @@ export default {
     linksTitle: 'Links',
     // Between a writeup and the child cards below it
     childrenTitle: 'In This Project',
+    // Under the tags of a page with two or more sections: links down to each
+    jumpLabel: 'On This Page',
     notFoundTitle: 'Page Not Found',
     notFoundText: (path) => `Nothing lives at #/${path}.`,
     notFoundBack: 'Back to Projects',
@@ -69,6 +71,22 @@ export default {
     result: 'Result',
   },
   about: {photoComing: 'Photo Coming'},
+  // Image gallery (components/gallery/): column control, lightbox
+  gallery: {
+    columns: 'Columns',
+    fullSize: 'View Full Size',
+    // Compare images: the tag on a thumb, and the two layers' default
+    // names (a gallery's compareLabels overrides them)
+    compare: 'Compare',
+    compareLabels: ['Before', 'After'],
+    // Gallery filter (components/gallery/filter.js): a folded row's
+    // button, and the status line beside Columns
+    more: (n) => `+${n} More`,
+    less: 'Less',
+    filterStatus: (shown, total, filtered) => (filtered ? `Showing ${shown} of ${total} images` : `All ${total} images`),
+    // Read out as the lightbox moves (the bar or dots show it on screen)
+    position: (i, count) => `Image ${i} of ${count}`,
+  },
   // 3D turntable (components/turntable/): phase buttons, hint, corner badge
   turntable: {
     phases: 'Phase',

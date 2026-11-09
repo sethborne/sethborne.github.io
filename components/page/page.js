@@ -8,6 +8,7 @@ import {findTrail, isLeaf} from '../../js/content.js';
 import {createBreadcrumb} from '../breadcrumb/breadcrumb.js';
 import {createCardGrid, labelFor} from '../card/card.js';
 import {createEmbed} from '../embed/embed.js';
+import {createGallery} from '../gallery/gallery.js';
 import {createTurntable} from '../turntable/turntable.js';
 import {createWriteup} from '../writeup/writeup.js';
 import ui from '../../content/ui.js';
@@ -62,23 +63,63 @@ const layoutOf = (node) => {
   return 'right';
 };
 
-// One piece of a page, from content-style fields: a 3D turntable, a live
-// URL, a link out, or a screenshot. Nothing to show gives null (no frame).
-const renderPiece = (title, fields = {}) => {
-  const {turntable, embed, link, fallback} = fields;
+// One piece of a page, from content-style fields: an image gallery, a 3D
+// turntable, a live URL, a link out, or a screenshot. Nothing to show
+// gives null (no frame).
+// key names the piece's place on the page (a section id, or 'content'),
+// so a gallery can keep its filter picks on the history entry.
+const renderPiece = (title, fields = {}, key = 'content') => {
+  const {gallery, turntable, embed, link, fallback} = fields;
+  if (gallery) return createGallery({title, gallery, key});
   if (turntable) return createTurntable({title, ...fields});
   return (embed || link || fallback) ? createEmbed({title, ...fields}) : null;
 };
 
-// A page's sections (content/helpers.js): heading, optional intro, piece
+// A page's sections (content/helpers.js): heading, optional intro, piece.
+// The id is prefixed so it can't clash with a home section's id; the h2
+// takes focus from a jump link (tabindex -1: not in the Tab order).
 const renderSection = ({title, text, ...fields}) =>
   el(
     'section',
-    {class: 'page-section'},
-    el('h2', {}, title),
+    {class: 'page-section', id: fields.id && `page-section-${fields.id}`},
+    el('h2', {tabindex: '-1'}, title),
     text && el('p', {class: 'page-section-text'}, text),
-    renderPiece(title, fields),
+    renderPiece(title, fields, fields.id),
   );
+
+// "On This Page": a link down to each section, on a page with two or
+// more. Buttons, not #anchors: the hash router owns the hash, so
+// href="#renderings" would route to Page Not Found. A click moves focus
+// to the heading (keyboard and screen reader users land there too) and
+// scrolls; the URL never changes. Smooth or instant follows the page's
+// CSS scroll-behavior (instant under reduced motion); scroll-margin-top
+// on .page-section keeps the heading clear of the header and the bar.
+const renderJumpLinks = (sections) => {
+  if (sections.length < 2) return null;
+  const jump = (section) => () => {
+    section.querySelector('h2').focus({preventScroll: true});
+    section.scrollIntoView({block: 'start'});
+  };
+  return el(
+    'nav',
+    {class: 'page-jump', 'aria-label': ui.page.jumpLabel},
+    el('span', {class: 'page-jump-label', 'aria-hidden': 'true'}, ui.page.jumpLabel),
+    el(
+      'ul',
+      {},
+      sections.map((section) => {
+        const button = el(
+          'button',
+          {type: 'button', class: 'page-jump-link'},
+          section.querySelector('h2').textContent,
+          el('span', {class: 'page-jump-chevron', 'aria-hidden': 'true'}),
+        );
+        button.addEventListener('click', jump(section));
+        return el('li', {}, button);
+      }),
+    ),
+  );
+};
 
 const renderNotFound = (path) => {
   const h1 = heading(ui.page.notFoundTitle);
@@ -122,6 +163,7 @@ export const createPage = ({tree, path}) => {
         {class: 'pills', 'aria-label': 'Tags'},
         labels.map((label) => el('li', {class: 'pill'}, label)),
       ),
+    renderJumpLinks(sections),
   );
   // Pieces that can go in the aside, by the names the node's `aside`
   // field uses (content/projects/). Listed ones move there, in order; the

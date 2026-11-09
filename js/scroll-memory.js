@@ -65,7 +65,12 @@ export const createScrollMemory = () => {
   const arrive = ({fresh = false} = {}) => {
     const key = currentKey();
     if (key && !fresh) return positions[key] ?? null;
-    if (!key) {
+    if (key) {
+      // A fresh visit on an entry that has state (a click on a link to
+      // this URL): keep the key, drop the rest (a gallery's filter picks),
+      // so the page starts clean like any link click
+      history.replaceState({scrollKey: key}, '');
+    } else {
       // No URL argument: the URL stays as it is
       history.replaceState({...history.state, scrollKey: newKey()}, '');
     }

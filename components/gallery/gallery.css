@@ -1,0 +1,900 @@
+/* ===========================
+   Gallery (grid of image thumbs + lightbox)
+   Settings arrive as classes (gallery--hover-zoom, ...) and custom
+   properties (--cols, --phone-cols, --thumb-aspect, --tick) from
+   gallery.js; content/helpers.js lists them.
+   =========================== */
+.gallery {
+  margin: 0 0 40px;
+}
+
+/* ----- Toolbar: lead (the filter's status line) left, columns right ----- */
+.gallery-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 14px;
+}
+
+/* The lead's own margins would push the row out of line */
+.gallery-toolbar > :not(.gallery-columns) {
+  margin: 0;
+}
+
+/* One control per screen size: 'phone' under 600px, 'wide' from 600px.
+   [hidden] (fewer than two choices) outranks both: class + attribute */
+.gallery-columns {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.gallery-columns--wide,
+.gallery-columns[hidden] {
+  display: none;
+}
+
+@media (min-width: 600px) {
+  .gallery-columns--wide {
+    display: flex;
+  }
+
+  .gallery-columns--phone {
+    display: none;
+  }
+}
+
+.gallery-columns-label {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* 'tabs' reuses .view-tab (filter-bar.css); 'icons' is drawn here */
+.gallery-col-icons {
+  display: flex;
+  gap: 4px;
+}
+
+.gallery-col-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 30px;
+  padding: 0;
+  color: color-mix(in srgb, var(--text) 55%, var(--bg));
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.gallery-col-icon svg {
+  width: 18px;
+  height: 14px;
+  fill: currentColor;
+}
+
+.gallery-col-icon[aria-pressed="true"] {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+@media (hover: hover) {
+  .gallery-col-icon:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+}
+
+.gallery-col-icon:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ----- Grid of mini cards (image + name, like .card) ----- */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--phone-cols, 2), 1fr);
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 600px) {
+  .gallery-grid {
+    grid-template-columns: repeat(var(--cols, 4), 1fr);
+    gap: 14px;
+  }
+}
+
+/* One button holds the image and the name, so hover and focus cover
+   both and Tab stops once per image. It fills its grid cell (the cells
+   in a row stretch to the tallest), and the name takes the spare height,
+   so a one-line title's card ends level with a two-line one beside it */
+.gallery-item {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: zoom-in;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.gallery-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* aspect-ratio holds the height before the image loads (scroll memory
+   needs the page at full height) */
+.gallery-thumb {
+  display: block;
+  flex-shrink: 0;
+  aspect-ratio: var(--thumb-aspect, 4 / 3);
+  overflow: hidden;
+  background: var(--bg-soft);
+}
+
+.gallery-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.25s ease;
+}
+
+.gallery-name {
+  display: block;
+  flex-grow: 1;
+  padding: 10px 12px 11px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--ink);
+  border-top: 1px solid var(--border);
+  transition: color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+/* filteredMark 'line': while any filter chip is picked, the line between
+   image and name turns orange on every shown thumb, a cue that the grid
+   is partial even once the chips are scrolled away. The 1px border plus
+   an inset shadow under it makes it thicker without moving the name;
+   --mark-width is the total */
+.gallery--mark-line.is-filtered .gallery-name {
+  /* this is filtered card line thickness */
+  --mark-width: 4px;
+  border-top-color: var(--accent);
+  box-shadow: inset 0 calc(var(--mark-width) - 1px) 0 var(--accent);
+}
+
+@media (hover: hover) {
+  /* 'lift': the card hover (card.css): lift, orange glow, orange name */
+  .gallery--hover-lift .gallery-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+
+  /* 'zoom': orange ring, the image zooms inside its frame */
+  .gallery--hover-zoom .gallery-item:hover {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+
+  .gallery--hover-zoom .gallery-item:hover .gallery-thumb img {
+    transform: scale(1.04);
+  }
+
+  .gallery-item:hover .gallery-name {
+    color: var(--accent);
+  }
+}
+
+/* ----- Lightbox (native <dialog>: focus trap, Esc, backdrop) ----- */
+
+/* Fills the window. 100% rather than 100vw: vw includes the page's
+   scrollbar, so the dialog would spill past the edge */
+.gallery-lightbox {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+  border: 0;
+}
+
+/* The page underneath doesn't scroll while it's open */
+html:has(.gallery-lightbox[open]) {
+  overflow: hidden;
+}
+
+/* Dark, a little see-through. A near-black of its own: no token is
+   this dark, and the text on it uses --bg (white) */
+.gallery-lightbox::backdrop {
+  background: rgb(20 21 24 / 0.92);
+}
+
+.gallery-lb {
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  height: 100%;
+  padding: 56px 64px 14px;
+}
+
+/* The image is centered in whatever room is left, never bigger:
+   placed absolutely so max-height has a real height to measure */
+.gallery-lb-stage {
+  position: relative;
+  min-height: 0;
+}
+
+.gallery-lb-img {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 4px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.can-open .gallery-lb-img {
+  cursor: zoom-in;
+}
+
+/* Under the image: title + caption on the left, the link on the right
+   (the embed caption's layout) */
+.gallery-lb-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px 24px;
+  width: 100%;
+  max-width: 1100px;
+  min-height: 3.4em;
+  margin: 0 auto;
+  padding-top: 14px;
+}
+
+.gallery-lb-text {
+  min-width: 0;
+}
+
+.gallery-lb-title {
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.25;
+  color: var(--bg);
+}
+
+.gallery-lb-caption {
+  margin: 3px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--bg) 70%, transparent);
+}
+
+.gallery-lb-caption:empty {
+  display: none;
+}
+
+/* Orange text, the dimmer orange on hover, underlined on keyboard
+   focus like the site's text links */
+.gallery-lb-full {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.gallery-lb-full:focus-visible {
+  outline: none;
+  text-decoration: underline 2px;
+  text-underline-offset: 4px;
+}
+
+@media (hover: hover) {
+  .gallery-lb-full:hover {
+    color: var(--accent-dim);
+  }
+}
+
+/* Arrows and close: the glyph only (like the hero controls and the
+   turntable pop-up's ×), on a 48px hit area */
+.gallery-lb-btn {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  font-size: 2.4rem;
+  line-height: 1;
+  color: color-mix(in srgb, var(--bg) 80%, transparent);
+  background: none;
+  border: 0;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .gallery-lb-btn:hover {
+    color: var(--accent);
+  }
+}
+
+.gallery-lb-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.gallery-lb-close {
+  top: 8px;
+  right: 10px;
+  font-size: 1.9rem;
+}
+
+.gallery-lb-prev,
+.gallery-lb-next {
+  top: 50%;
+  translate: 0 -50%;
+}
+
+.gallery-lb-prev {
+  left: 10px;
+}
+
+.gallery-lb-next {
+  right: 10px;
+}
+
+/* ----- Position: bar ----- */
+.gallery-bar {
+  position: relative;
+  width: 100%;
+  max-width: 1100px;
+  height: 24px;
+  margin: 8px auto 0;
+  cursor: pointer;
+  /* A sideways drag here scrubs; the page and the swipe leave it alone */
+  touch-action: none;
+}
+
+@media (pointer: coarse) {
+  .gallery-bar {
+    height: 40px;
+  }
+}
+
+.gallery-bar-rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--bg) 28%, transparent);
+}
+
+.gallery-bar-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--accent);
+  transition: width 0.25s ease;
+}
+
+.gallery-bar-tick {
+  position: absolute;
+  top: 1px;
+  width: var(--tick, 6px);
+  height: var(--tick, 6px);
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  pointer-events: none;
+}
+
+.gallery--ticks-diamond .gallery-bar-tick {
+  border-radius: 1px;
+  rotate: 45deg;
+}
+
+/* Passed ticks turn orange with the fill */
+.gallery-bar-tick.is-past {
+  background: var(--accent);
+}
+
+.gallery--no-fill .gallery-bar-tick.is-past {
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+}
+
+.gallery-bar-knob {
+  position: absolute;
+  z-index: 1;
+  top: -5px;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent);
+  transition: left 0.25s ease;
+}
+
+/* ----- Position: dots (the hero's, light on the dark backdrop) ----- */
+.gallery-dots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding-top: 6px;
+}
+
+.gallery-dot {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.gallery-dot::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--bg) 45%, transparent);
+}
+
+.gallery-dot[aria-current="true"]::before {
+  background: var(--accent);
+}
+
+@media (hover: hover) {
+  .gallery-dot:hover::before {
+    background: var(--accent);
+  }
+}
+
+.gallery-dot:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* ----- Phones: text stacked, arrows at the bottom beside the bar ----- */
+@media (max-width: 599px) {
+  .gallery-lb {
+    padding: 52px 8px 12px;
+  }
+
+  .gallery-lb-meta {
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 4px 0;
+  }
+
+  .gallery-lb-prev,
+  .gallery-lb-next {
+    top: auto;
+    bottom: 8px;
+    translate: none;
+    width: 44px;
+    height: 44px;
+  }
+
+  .gallery-bar,
+  .gallery-dots {
+    width: auto;
+    margin-left: 52px;
+    margin-right: 52px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery-item,
+  .gallery-thumb img,
+  .gallery-name,
+  .gallery-bar-fill,
+  .gallery-bar-knob {
+    transition: none;
+  }
+
+  .gallery--hover-lift .gallery-item:hover,
+  .gallery--hover-zoom .gallery-item:hover .gallery-thumb img {
+    transform: none;
+  }
+}
+
+/* ===========================
+   Compare images (before/after slider; compare.js)
+   The top image is cut with clip-path at --pos, so both stay lined up
+   =========================== */
+
+/* The lightbox swaps its <img> and View Full Size for these */
+.gallery-lb-img[hidden],
+.gallery-lb-full[hidden],
+.gallery-lb-full-pair[hidden] {
+  display: none;
+}
+
+.gallery-lb-full-pair {
+  display: flex;
+  gap: 20px;
+}
+
+/* Fills the stage; a size container, so the box can fit inside it at
+   the image's own shape (cqw/cqh = the stage's width/height) */
+.gallery-compare {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  container-type: size;
+}
+
+.gallery-compare-box {
+  position: relative;
+  aspect-ratio: var(--ratio, 3 / 2);
+  width: min(100cqw, calc(100cqh * var(--ratio, 3 / 2)));
+  overflow: hidden;
+  border-radius: 4px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: ew-resize;
+}
+
+.gallery-compare--y .gallery-compare-box {
+  cursor: ns-resize;
+}
+
+.gallery-compare-img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.gallery-compare--x .gallery-compare-top {
+  clip-path: inset(0 0 0 var(--pos, 50%));
+}
+
+/* y: after on top, before below, so the top image keeps the part above
+   the line */
+.gallery-compare--y .gallery-compare-top {
+  clip-path: inset(0 0 calc(100% - var(--pos, 50%)) 0);
+}
+
+/* The line: white with a faint dark edge, so it shows on light and dark */
+.gallery-compare-line {
+  position: absolute;
+  background: var(--bg);
+  box-shadow: 0 0 0 1px rgb(20 21 24 / 0.25);
+}
+
+.gallery-compare--x .gallery-compare-line {
+  top: 0;
+  bottom: 0;
+  left: var(--pos, 50%);
+  width: 2px;
+  transform: translateX(-50%);
+}
+
+.gallery-compare--y .gallery-compare-line {
+  left: 0;
+  right: 0;
+  top: var(--pos, 50%);
+  height: 2px;
+  transform: translateY(-50%);
+}
+
+/* Round handle in the middle of the line, arrows pointing the drag way */
+.gallery-compare-handle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  transform: translate(-50%, -50%);
+  background: var(--bg);
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgb(20 21 24 / 0.35);
+}
+
+/* Small solid triangles, not the lightbox's ‹ › chevrons: those go to
+   another image, these say "this line moves" (same orange, new shape) */
+.gallery-compare-handle::before {
+  content: "◀ ▶";
+  font-size: 0.6rem;
+  line-height: 1;
+  letter-spacing: 1px;
+  color: var(--accent);
+}
+
+.gallery-compare--y .gallery-compare-handle::before {
+  transform: rotate(90deg);
+}
+
+.gallery-compare-handle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* compareLine 'accent': an orange line, same faint dark edge */
+.gallery-compare--line-accent .gallery-compare-line {
+  background: var(--accent);
+}
+
+/* compareHandle 'solid': an orange knob, white ring and arrows */
+.gallery-compare--handle-solid .gallery-compare-handle {
+  background: var(--accent);
+  border-color: var(--bg);
+}
+
+.gallery-compare--handle-solid .gallery-compare-handle::before {
+  color: var(--bg);
+}
+
+/* compareHandle 'pill': a capsule along the line with two grip ridges */
+.gallery-compare--handle-pill .gallery-compare-handle {
+  width: 22px;
+  height: 52px;
+  border-radius: 999px;
+}
+
+.gallery-compare--y.gallery-compare--handle-pill .gallery-compare-handle {
+  width: 52px;
+  height: 22px;
+}
+
+.gallery-compare--handle-pill .gallery-compare-handle::before {
+  content: "";
+  width: 6px;
+  height: 16px;
+  border-left: 2px solid var(--accent);
+  border-right: 2px solid var(--accent);
+}
+
+/* compareHandle 'arrows': no knob, just two arrows astride the line */
+.gallery-compare--handle-arrows .gallery-compare-handle {
+  width: 56px;
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+
+.gallery-compare--handle-arrows .gallery-compare-handle::before {
+  /* \2003: an em space between the arrows, where the line runs */
+  content: "◀\2003▶";
+  font-size: 0.85rem;
+  text-shadow: 0 0 4px rgb(20 21 24 / 0.6);
+}
+
+/* The one-time hint glides; a drag never does */
+.is-hinting .gallery-compare-top {
+  transition: clip-path 0.35s ease;
+}
+
+.is-hinting .gallery-compare-line {
+  transition: left 0.35s ease, top 0.35s ease;
+}
+
+/* Layer names in the corners: x: before left, after right; y: after
+   at the top, before at the bottom */
+.gallery-compare-label,
+.gallery-badge {
+  position: absolute;
+  padding: 3px 9px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  color: var(--bg);
+  background: rgb(20 21 24 / 0.62);
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.gallery-compare-label {
+  top: 10px;
+  left: 10px;
+  transition: opacity 0.2s ease;
+}
+
+/* Its image is all but gone (compare.js, EDGE) */
+.gallery-compare-label.is-gone {
+  opacity: 0;
+}
+
+.gallery-compare--x .gallery-compare-label--after {
+  left: auto;
+  right: 10px;
+}
+
+.gallery-compare--y .gallery-compare-label--before {
+  top: auto;
+  bottom: 10px;
+}
+
+/* ----- Compare thumbs in the grid ----- */
+.gallery-thumb {
+  position: relative;
+}
+
+.gallery-badge {
+  top: 8px;
+  left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+}
+
+/* 'icon': a round chip just big enough for the drawing */
+.gallery-badge--icon {
+  padding: 5px 7px;
+}
+
+.gallery-badge-icon {
+  width: 16px;
+  height: 14px;
+}
+
+/* 'split': both images stacked, the top one cut in the middle */
+.gallery-thumb--split .gallery-thumb-top {
+  position: absolute;
+  inset: 0;
+}
+
+.gallery-thumb--x .gallery-thumb-top {
+  clip-path: inset(0 0 0 50%);
+}
+
+.gallery-thumb--y .gallery-thumb-top {
+  clip-path: inset(0 0 50% 0);
+}
+
+.gallery-thumb-line {
+  position: absolute;
+  background: var(--bg);
+  box-shadow: 0 0 0 1px rgb(20 21 24 / 0.2);
+}
+
+.gallery-thumb--x .gallery-thumb-line {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+}
+
+.gallery-thumb--y .gallery-thumb-line {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+}
+
+/* ===========================
+   Gallery filter (filter.js): chip rows above the toolbar. The chips,
+   labels and Clear are the home filter bar's (filter-bar.css).
+   =========================== */
+.gallery-filter {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+/* offsetTop of the chips is measured from their row (folding) */
+.gallery-filter-row {
+  position: relative;
+}
+
+/* Desktop and landscape tablets: rows without ownRow share one line,
+   split by a thin rule; an ownRow row takes a full line. Under 1024px
+   every row stacks. */
+@media (min-width: 1024px) {
+  .gallery-filter {
+    grid-template-columns: auto 1fr;
+  }
+
+  .gallery-filter-own-row {
+    grid-column: 1 / -1;
+  }
+
+  .gallery-filter-row:not(.gallery-filter-own-row) + .gallery-filter-row:not(.gallery-filter-own-row) {
+    margin-left: 24px;
+    padding-left: 24px;
+    border-left: 1px solid var(--border);
+  }
+}
+
+/* Counts: inherit the chip's text color (ink, orange on hover, white when
+   on) and fade with opacity. Not color-mix(currentColor) on `color`:
+   Chrome kept the old color when the chip changed, so a count stayed
+   orange on the orange "on" fill, and white on the white "off" chip */
+.gallery-filter--counts-plain .gallery-filter-count {
+  margin-left: 0.7ch;
+  opacity: 0.6;
+}
+
+/* 'bar': a thin rule between the label and the number. The rule is a
+   pseudo-element at half opacity inside the count's 0.7, so 0.35 */
+.gallery-filter--counts-bar .gallery-filter-count {
+  position: relative;
+  margin-left: 9px;
+  padding-left: 9px;
+  opacity: 0.7;
+}
+
+.gallery-filter--counts-bar .gallery-filter-count::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.15em;
+  bottom: 0.15em;
+  width: 1px;
+  background: currentColor;
+  opacity: 0.5;
+}
+
+/* 'badge': the number in a small gray pill inside the chip */
+.gallery-filter--counts-badge .gallery-filter-count {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 6px;
+  min-width: 1.6em;
+  font-size: 0.7rem;
+  line-height: 1.5;
+  text-align: center;
+  background: var(--bg-soft);
+  border-radius: 999px;
+}
+
+.gallery-filter--counts-badge .filter-chip[aria-pressed="true"] .gallery-filter-count {
+  background: color-mix(in srgb, #fff 25%, transparent);
+}
+
+/* More / Less: an action, not a term, so no fill and a dashed orange
+   outline; solid orange on hover, like Clear */
+.filter-chip.gallery-filter-more {
+  color: var(--accent);
+  border-style: dashed;
+  border-color: var(--accent);
+}
+
+@media (hover: hover) {
+  .filter-chip.gallery-filter-more:hover {
+    color: #fff;
+    background: var(--accent);
+    border-style: solid;
+  }
+}
