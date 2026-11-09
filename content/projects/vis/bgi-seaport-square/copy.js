@@ -31,6 +31,42 @@ export default {
           title: 'Aerial Looking Southwest',
           text: 'Image description for Southwest',
         },
+        {
+          title: 'Building B - Exterior ',
+          text: 'Image description for Bldg B Exterior',
+        },
+        {
+          title: 'Building B - Typical Office Interior',
+          text: 'Image description for Bldg B Office Interior',
+        },
+        {
+          title: 'Building D - Exterior ',
+          text: 'Image description for Bldg D Exterior',
+        },
+        {
+          title: 'Building D - Lobby Interior',
+          text: 'Image description for Bldg D Lobby Interior',
+        },
+        {
+          title: 'Building D - Typical Office Interior',
+          text: 'Image description for Bldg Office D Interior',
+        },
+        {
+          title: 'Building L1 - Exterior ',
+          text: 'Image description for Bldg L1 Exterior',
+        },
+        {
+          title: 'Des ',
+          text: 'Image description for',
+        },
+        {
+          title: 'Building L2 - Exterior ',
+          text: 'Image description for Bldg L2 Exterior',
+        },
+        {
+          title: 'Des ',
+          text: 'Image description for',
+        },
       ],
     },
     {
