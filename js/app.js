@@ -82,7 +82,17 @@ const showView = (view) => {
   const changed = view.hidden;
   homeView.hidden = view !== homeView;
   pageView.hidden = view !== pageView;
+  closeDialogs();
   return changed ? 'instant' : 'auto';
+};
+
+// A modal <dialog> (the gallery lightbox) keeps the rest of the document
+// inert until it's closed, even when its view is hidden. So Back with the
+// lightbox open left a page nothing could click. Every route change closes
+// any open one; done after the views swap, so a dialog's own close handler
+// (focus back to its thumb) lands in a hidden view and can't scroll.
+const closeDialogs = () => {
+  for (const dialog of document.querySelectorAll('dialog[open]')) dialog.close();
 };
 
 // The view of the route before this one, to tell entering filter mode

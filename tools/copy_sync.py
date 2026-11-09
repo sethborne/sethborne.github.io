@@ -9,6 +9,10 @@ content/helpers.js). The doc is the source of truth: never hand-edit copy.js.
     python tools/copy_sync.py [project] --write    # regenerate copy.js files from the docs
     python tools/copy_sync.py [project] --export   # build missing docs from the site (--force: all)
 
+Add --log to --check or --write to also keep a Markdown record of the run
+(diffs + warnings) in <project folder>/_logs/YYYYMMDD_HHMMSS_copy_sync.md,
+one file per project per run (gitignored).
+
 [project] is a project id (textile-resale-economy); leave it out for every
 project. Each command covers the project's page folders at every depth.
 
@@ -16,6 +20,12 @@ Doc layout (the guide at the top of every exported doc repeats this):
 - Anything before the first Heading 2 is ignored (title + guide).
 - Heading 2: one field (FIELDS below). Each non-empty paragraph under it
   is one item.
+- Sections nests, like the page's `sections` in index.js: a Heading 3 per
+  section (its heading), then one paragraph of intro (optional), then a
+  Heading 4 per piece with copy (Gallery: one "Title: caption" per image;
+  a compare pair may add " | Before | After", its own two labels).
+  Bullets, numbers and indents are formatting only; parsing reads the
+  heading levels and the text.
 - Comments and tracked deletions are ignored; tracked insertions count.
 
 Standard library only (zipfile + xml), plus Node to read the site's
@@ -24,6 +34,7 @@ content tree for --export and the page check.
 
 import argparse
 import difflib
+from datetime import datetime
 import json
 import re
 import subprocess
@@ -33,6 +44,8 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 from xml.sax.saxutils import escape
 
+from term import diff_line, dim, fail, heading, ok, paired, path, warn
+
 ROOT = Path(__file__).resolve().parent.parent
 PROJECTS = ROOT / 'content' / 'projects'
 
@@ -41,13 +54,17 @@ PROJECTS = ROOT / 'content' / 'projects'
 #   list:   always an array
 #   action: array of {lead, text}, split at the first ': '
 #   links:  array of {label, href}, from Word hyperlinks
-#   section: array of {title, text?}: "Heading" or "Heading: intro text",
-#           in the order of the page's sections in index.js
+#   titled: array of {title, text?, labels?}: "Title" or "Title: text". Gallery: a
+#           title + caption per image, in the order index.js lists them; a
+#           compare pair may end in " | Before | After" (its own two labels)
+#   sections: array of {title, text?, <piece copy>}, nested (see below)
 FIELDS = [
     ('Title', 'title', 'text'),
     ('Summary', 'summary', 'text'),
     ('Try This', 'content.tryThis', 'text'),
-    ('Sections', 'sections', 'section'),
+    ('Sections', 'sections', 'sections'),
+    # The page's own gallery (content.gallery); a section's goes under it
+    ('Gallery', 'gallery', 'titled'),
     ('Open Label', 'content.openLabel', 'text'),
     ('Links Title', 'linksTitle', 'text'),
     ('Links', 'links', 'links'),
@@ -60,6 +77,14 @@ FIELDS = [
 ]
 FIELD_BY_HEADING = {heading.lower(): (key, kind) for heading, key, kind in FIELDS}
 FIELD_NAMES = ', '.join(heading for heading, _, _ in FIELDS)
+# Inside Sections, the Heading 4s a section may hold: its piece's copy.
+# Sections pair with index.js's `sections` by position, and each piece's
+# items with that piece's list (a gallery's images) by position.
+SECTION_PIECES = [
+    ('Gallery', 'gallery', 'titled'),
+]
+PIECE_BY_HEADING = {heading.lower(): (key, kind) for heading, key, kind in SECTION_PIECES}
+PIECE_NAMES = ', '.join(heading for heading, _, _ in SECTION_PIECES)
 # Skeleton for a new page's doc
 NEW_PAGE_FIELDS = ['title', 'summary']
 
@@ -202,11 +227,19 @@ def to_value(kind, items, where):
                 raise CopyError(f'{where}: Action item needs "Lead: text": {text!r}')
             out.append({'lead': lead, 'text': rest})
         return out
-    if kind == 'section':
+    if kind == 'titled':
         out = []
         for text, _ in items:
-            title, sep, rest = text.partition(': ')
-            out.append({'title': title, 'text': rest} if sep else {'title': title})
+            # " | A | B" at the end: a compare pair's own layer names
+            main, *labels = text.split(' | ')
+            labels = [label.strip() for label in labels]
+            if labels and (len(labels) != 2 or not all(labels)):
+                raise CopyError(f'{where}: a compare pair takes exactly two labels, "Title: caption | Before | After": {text!r}')
+            title, sep, rest = main.partition(': ')
+            item = {'title': title, 'text': rest} if sep else {'title': title}
+            if labels:
+                item['labels'] = labels
+            out.append(item)
         return out
     if kind == 'links':
         out = []
@@ -218,12 +251,29 @@ def to_value(kind, items, where):
     raise ValueError(kind)
 
 
+def to_sections(found, where):
+    """Parsed Sections entries -> [{title, text?, gallery?: [...]}]."""
+    out = []
+    for section in found:
+        title, intro, pieces = section['title'], section['intro'], section['pieces']
+        if len(intro) > 1:
+            raise CopyError(f'{where} / {title!r}: one intro paragraph per section, found {len(intro)}')
+        entry = {'title': title, **({'text': intro[0]} if intro else {})}
+        for key, (kind, items) in pieces.items():
+            if items:
+                entry[key] = to_value(kind, items, f'{where} / {title!r} / {key}')
+        out.append(entry)
+    return out
+
+
 def parse(paragraphs, where):
     """One page's doc -> flat fields {'title': ..., 'writeup.tldr': [...]}."""
     errors, items = [], {}
     field = None  # None until the first Heading 2: title + guide are ignored
+    piece = None  # inside Sections: the current Heading 4's key, or None for the intro
     for style, text, href in paragraphs:
         if style == 'Heading2':
+            piece = None
             match = FIELD_BY_HEADING.get(text.strip().lower())
             if not match:
                 errors.append(f'{where}: unknown field {text!r} (use one of: {FIELD_NAMES})')
@@ -234,15 +284,45 @@ def parse(paragraphs, where):
                 errors.append(f'{where}: field {text!r} appears twice')
             field = key
             items[key] = (kind, [])
+        elif field == 'sections' and style == 'Heading3':
+            # A new section: its heading; the intro and pieces follow
+            items['sections'][1].append({'title': text.strip(), 'intro': [], 'pieces': {}})
+            piece = None
+        elif field == 'sections' and style == 'Heading4':
+            sections = items['sections'][1]
+            match = PIECE_BY_HEADING.get(text.strip().lower())
+            if not sections:
+                errors.append(f'{where}: {text!r} (Heading 4) comes before any section (Heading 3)')
+                piece = 'unknown'
+            elif not match:
+                errors.append(f'{where} / {sections[-1]["title"]!r}: unknown piece {text!r} (use one of: {PIECE_NAMES})')
+                piece = 'unknown'
+            else:
+                key, kind = match
+                if key in sections[-1]['pieces']:
+                    errors.append(f'{where} / {sections[-1]["title"]!r}: {text!r} appears twice')
+                sections[-1]['pieces'][key] = (kind, [])
+                piece = key
         elif style.startswith('Heading') and field is not None:
-            errors.append(f'{where}: {text!r} uses {style}; fields are Heading 2, the rest is Normal text')
+            nested = ' (Heading 3 and 4 only inside Sections)' if style in ('Heading3', 'Heading4') else ''
+            errors.append(f'{where}: {text!r} uses {style}; fields are Heading 2, the rest is Normal text{nested}')
+        elif field == 'sections' and text:
+            sections = items['sections'][1]
+            if not sections:
+                errors.append(f'{where} / sections: {text!r} comes before any section; Sections uses a Heading 3 per section (its heading), then its intro and pieces')
+                field = 'unknown'  # one error, not one per line
+            elif piece is None:
+                sections[-1]['intro'].append(text)
+            elif piece != 'unknown':
+                sections[-1]['pieces'][piece][1].append((text, href))
         elif field not in (None, 'unknown') and text:
             items[field][1].append((text, href))
     fields = {}
     for key, (kind, found) in items.items():
         if found:
             try:
-                fields[key] = to_value(kind, found, f'{where} / {key}')
+                at = f'{where} / {key}'
+                fields[key] = to_sections(found, at) if kind == 'sections' else to_value(kind, found, at)
             except CopyError as e:
                 errors.append(str(e))
     if errors:
@@ -325,10 +405,25 @@ const walk = (node, path) => {
   const {tryThis, openLabel} = node.content ?? {};
   const content = Object.fromEntries(Object.entries({tryThis, openLabel}).filter(([, v]) => v !== undefined));
   if (Object.keys(content).length) copy.content = content;
-  // Sections: only their copy (heading, intro); the pieces stay in index.js
-  const sections = (node.sections ?? []).filter((s) => s.title).map(({title, text}) => (text ? {title, text} : {title}));
+  // A gallery's copy: each image's title and caption
+  const captionsOf = (gallery) =>
+    (gallery?.images ?? []).filter((image) => image.title).map(({title, text, labels}) => ({title, ...(text && {text}), ...(labels && {labels})}));
+  // Which images are compare pairs, by position (for --check only)
+  const comparesOf = (gallery) => (gallery?.images ?? []).map((image) => Boolean(image.compare));
+  // Sections: only their copy (heading, intro, piece copy); the pieces stay in index.js
+  const sections = (node.sections ?? []).filter((s) => s.title).map(({title, text, gallery}) => {
+    const captions = captionsOf(gallery);
+    return {title, ...(text && {text}), ...(captions.length && {gallery: captions})};
+  });
   if (sections.length) copy.sections = sections;
-  pages.push({path, copy});
+  // The page's own gallery (content.gallery)
+  const captions = captionsOf(node.content?.gallery);
+  if (captions.length) copy.gallery = captions;
+  const compares = {
+    gallery: comparesOf(node.content?.gallery),
+    sections: (node.sections ?? []).filter((s) => s.title).map((s) => comparesOf(s.gallery)),
+  };
+  pages.push({path, copy, compares});
   for (const child of node.children ?? []) walk(child, [...path, child.id]);
 };
 walk(root, [root.id]);
@@ -348,13 +443,33 @@ def site_pages(project):
     return json.loads(result.stdout)
 
 
-def check_tree(project, folders):
+def check_tree(pages, folders):
     """Folders and the tree must agree: same paths, ids = folder names."""
-    site = {' / '.join(p['path']) for p in site_pages(project)}
+    site = {' / '.join(p['path']) for p in pages}
     disk = {label(f) for f in folders}
     warnings = [f'{p}: page in the tree but no folder for it (or its id doesn’t match the folder name)'
                 for p in sorted(site - disk)]
     warnings += [f'{p}: folder has an index.js but no parent imports it' for p in sorted(disk - site)]
+    return warnings
+
+
+def check_labels(pages, docs):
+    """Labels on a doc line ("| Before | After") only for compare pairs."""
+    warnings = []
+    for page in pages:
+        where = ' / '.join(page['path'])
+        fields = docs.get(where)
+        if not fields:
+            continue
+        compares = page['compares']
+        galleries = [('gallery', fields.get('gallery', []), compares['gallery'])]
+        for k, section in enumerate(fields.get('sections', [])):
+            flags = compares['sections'][k] if k < len(compares['sections']) else []
+            galleries.append((f'sections / {section["title"]} / gallery', section.get('gallery', []), flags))
+        for at, items, flags in galleries:
+            for i, item in enumerate(items):
+                if item.get('labels') and not (i < len(flags) and flags[i]):
+                    warnings.append(f'{where} / {at}: line {i + 1} has labels, but image {i + 1} in index.js has no `compare`: {item["title"]}')
     return warnings
 
 
@@ -381,11 +496,18 @@ def lint(where, fields):
             lower = key in TITLE_CASE_KEYS and not_title_case(text)
             if lower:
                 warnings.append(f'{where} / {key}: not Title Case ({", ".join(lower)}): {text}')
-    # Section headings are headings; their intro text is a sentence
-    for item in fields.get('sections', []):
-        lower = not_title_case(item['title'])
-        if lower:
-            warnings.append(f'{where} / sections: not Title Case ({", ".join(lower)}): {item["title"]}')
+    # Section headings and image titles are titles; their text is a sentence
+    titled = [('gallery', item) for item in fields.get('gallery', [])]
+    for section in fields.get('sections', []):
+        titled.append(('sections', section))
+        for _, key, kind in SECTION_PIECES:
+            if kind == 'titled':
+                titled += [(f'sections / {section["title"]} / {key}', item) for item in section.get(key, [])]
+    for at, item in titled:
+        for text in [item['title'], *item.get('labels', [])]:
+            lower = not_title_case(text)
+            if lower:
+                warnings.append(f'{where} / {at}: not Title Case ({", ".join(lower)}): {text}')
     return warnings
 
 
@@ -405,13 +527,25 @@ def run(text, bold=False, style=None):
     return f'<w:r>{rpr}<w:t xml:space="preserve">{escape(text)}</w:t></w:r>'
 
 
-def para(content, style=None):
-    ppr = f'<w:pPr><w:pStyle w:val="{style}"/></w:pPr>' if style else ''
+def para(content, style=None, num=None):
+    """One paragraph; `num` puts it in that numbered list (its own count)."""
+    numpr = f'<w:numPr><w:ilvl w:val="0"/><w:numId w:val="{num}"/></w:numPr>' if num else ''
+    ppr = f'<w:pPr><w:pStyle w:val="{style}"/>{numpr}</w:pPr>' if style else ''
     return f'<w:p>{ppr}{content}</w:p>'
 
 
-def doc_body(folder, flat, add_link):
-    """Paragraph XML for one page's doc: title, guide, then its fields."""
+def titled_para(item, style, num=None):
+    """"Title: text" with the title in bold, then " | A | B" for a pair's labels."""
+    text = item.get('text')
+    title = run(curly(item['title']) + (':' if text else ''), bold=True)
+    labels = ''.join(f' | {curly(label)}' for label in item.get('labels', []))
+    rest = (' ' + curly(text) if text else '') + labels
+    return para(title + (run(rest) if rest else ''), style, num)
+
+
+def doc_body(folder, flat, add_link, new_list):
+    """Paragraph XML for one page's doc: title, guide, then its fields.
+    new_list() returns a fresh numbered list id, so each list counts from 1."""
     project = page_path(folder)[0]
     guide = [
         f'Site copy for the page #/{"/".join(page_path(folder))}. This doc is the source of truth: edit it here, then run',
@@ -419,7 +553,9 @@ def doc_body(folder, flat, add_link):
         f'Each Heading 2 is a field: {FIELD_NAMES}. Each paragraph under it is one item. '
         'Add a field by adding its heading; delete the heading and its text to remove it.',
         'Action items are "Lead: text". Links are hyperlinks: the text is the button label.',
-        'Sections items are "Heading" or "Heading: intro text", one per section, in page order.',
+        'Sections: a Heading 3 per section (its heading), in page order; under it one paragraph of intro (optional), '
+        'then a Heading 4 per piece with copy: Gallery.',
+        'Gallery items are "Title" or "Title: caption", one per image, in gallery order (the numbers match the images list). A compare pair can end in " | After | Changes" to rename its two layers.',
         'Comments are ignored, so use them for notes. Tracked changes are fine: insertions count, deletions don’t.',
     ]
     out = [para(run(label(folder)), 'Title')]
@@ -429,13 +565,25 @@ def doc_body(folder, flat, add_link):
             continue
         value = flat[key]
         out.append(para(run(heading), 'Heading2'))
+        if kind == 'sections':
+            # Nested like index.js: section heading, intro, then each piece's items
+            for section in value:
+                out.append(para(run(curly(section['title'])), 'Heading3'))
+                if section.get('text'):
+                    out.append(para(run(curly(section['text'])), 'SectionText'))
+                for piece_heading, piece_key, _ in SECTION_PIECES:
+                    if piece_key in section:
+                        out.append(para(run(piece_heading), 'Heading4'))
+                        num = new_list()
+                        out += [titled_para(item, 'ListNumber', num) for item in section[piece_key]]
+            continue
+        num = new_list() if kind == 'titled' else None
         items = value if isinstance(value, list) else [value]
         for item in items:
             if kind == 'action':
                 out.append(para(run(curly(item['lead']) + ':', bold=True) + run(' ' + curly(item['text'])), 'ListBullet'))
-            elif kind == 'section':
-                text = item.get('text')
-                out.append(para(run(curly(item['title']) + (':' if text else ''), bold=True) + (run(' ' + curly(text)) if text else ''), 'ListBullet'))
+            elif kind == 'titled':
+                out.append(titled_para(item, 'ListNumber', num))
             elif kind == 'links':
                 rid = add_link(item['href'])
                 link = f'<w:hyperlink r:id="{rid}">{run(curly(item["label"]), style="Hyperlink")}</w:hyperlink>'
@@ -456,14 +604,35 @@ STYLES = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:style w:type="paragraph" w:styleId="Guide"><w:name w:val="Guide"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="60"/></w:pPr><w:rPr><w:i/><w:color w:val="808080"/><w:sz w:val="20"/></w:rPr></w:style>
 <w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="320" w:after="80"/><w:outlineLvl w:val="1"/></w:pPr><w:rPr><w:b/><w:color w:val="CC7A00"/><w:sz w:val="26"/></w:rPr></w:style>
 <w:style w:type="paragraph" w:styleId="ListBullet"><w:name w:val="List Bullet"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:numPr><w:numId w:val="1"/></w:numPr><w:spacing w:after="80"/></w:pPr></w:style>
+<w:style w:type="paragraph" w:styleId="Heading3"><w:name w:val="heading 3"/><w:basedOn w:val="Normal"/><w:next w:val="SectionText"/><w:qFormat/><w:pPr><w:keepNext/><w:numPr><w:numId w:val="2"/></w:numPr><w:spacing w:before="200" w:after="60"/><w:outlineLvl w:val="2"/></w:pPr><w:rPr><w:b/><w:color w:val="3C3F45"/><w:sz w:val="24"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="SectionText"><w:name w:val="Section Text"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:ind w:left="1080"/></w:pPr></w:style>
+<w:style w:type="paragraph" w:styleId="Heading4"><w:name w:val="heading 4"/><w:basedOn w:val="Normal"/><w:next w:val="ListNumber"/><w:qFormat/><w:pPr><w:keepNext/><w:ind w:left="1080"/><w:spacing w:before="120" w:after="60"/><w:outlineLvl w:val="3"/></w:pPr><w:rPr><w:b/><w:color w:val="808080"/><w:sz w:val="22"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="ListNumber"><w:name w:val="List Number"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:numPr><w:numId w:val="3"/></w:numPr><w:spacing w:after="80"/></w:pPr></w:style>
 <w:style w:type="character" w:styleId="Hyperlink"><w:name w:val="Hyperlink"/><w:rPr><w:color w:val="CC7A00"/><w:u w:val="single"/></w:rPr></w:style>
 </w:styles>""".replace('{W}', W)
 
-NUMBERING = f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:numbering xmlns:w="{W}">
-<w:abstractNum w:abstractNumId="0"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="360" w:hanging="360"/></w:pPr></w:lvl></w:abstractNum>
-<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>
-</w:numbering>"""
+# Lists: 1 = bullets (list fields), 2 = section heading bullets (Heading 3),
+# 3 and up = numbered lists (gallery items), one per list, each restarting
+# at 1. Word types a new List Number paragraph into list 3 by default.
+FIRST_NUMBERED = 3
+
+
+def numbering_xml(numbered_lists):
+    nums = ''.join(
+        f'<w:num w:numId="{n}"><w:abstractNumId w:val="2"/>'
+        f'<w:lvlOverride w:ilvl="0"><w:startOverride w:val="1"/></w:lvlOverride></w:num>'
+        for n in range(FIRST_NUMBERED, FIRST_NUMBERED + max(numbered_lists, 1))
+    )
+    return (
+        f'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        f'<w:numbering xmlns:w="{W}">'
+        f'<w:abstractNum w:abstractNumId="0"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="360" w:hanging="360"/></w:pPr></w:lvl></w:abstractNum>'
+        f'<w:abstractNum w:abstractNumId="1"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr></w:lvl></w:abstractNum>'
+        f'<w:abstractNum w:abstractNumId="2"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="1800" w:hanging="360"/></w:pPr></w:lvl></w:abstractNum>'
+        f'<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>'
+        f'<w:num w:numId="2"><w:abstractNumId w:val="1"/></w:num>'
+        f'{nums}</w:numbering>'
+    )
 
 CONTENT_TYPES = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
@@ -487,7 +656,13 @@ def write_docx(path, folder, flat):
         links.append(href)
         return f'rIdLink{len(links)}'
 
-    body = doc_body(folder, flat, add_link)
+    numbered = []
+
+    def new_list():
+        numbered.append(FIRST_NUMBERED + len(numbered))
+        return numbered[-1]
+
+    body = doc_body(folder, flat, add_link, new_list)
     document = (
         f'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
         f'<w:document xmlns:w="{W}" xmlns:r="{R}"><w:body>{body}'
@@ -512,7 +687,7 @@ def write_docx(path, folder, flat):
         z.writestr('_rels/.rels', PACKAGE_RELS)
         z.writestr('word/document.xml', document)
         z.writestr('word/styles.xml', STYLES)
-        z.writestr('word/numbering.xml', NUMBERING)
+        z.writestr('word/numbering.xml', numbering_xml(len(numbered)))
         z.writestr('word/_rels/document.xml.rels', doc_rels)
 
 
@@ -524,7 +699,7 @@ def export(project, folders, force):
     for folder in folders:
         if not (folder / 'copy.js').exists():
             (folder / 'copy.js').write_text(STUB_JS, encoding='utf-8', newline='\n')
-            print(f'Wrote a placeholder {(folder / "copy.js").relative_to(ROOT)}')
+            print(ok('Wrote a placeholder'), path((folder / 'copy.js').relative_to(ROOT)))
     by_label = {label(f): f for f in folders}
     for page in site_pages(project):
         folder = by_label.get(' / '.join(page['path']))
@@ -538,12 +713,12 @@ def export(project, folders, force):
             write_docx(doc, folder, flat)
         except PermissionError:
             raise CopyError(f'Can’t write {doc.name}: close it in Word first.')
-        print(f'Wrote {doc.relative_to(ROOT)}')
+        print(ok('Wrote'), path(doc.relative_to(ROOT)))
 
 
 def sync(folders, write):
     """Parse every doc first; write only if all of them parse."""
-    results, errors, warnings = [], [], []
+    results, errors, warnings, docs = [], [], [], {}
     for folder in folders:
         doc, js = folder / f'{folder.name}.docx', folder / 'copy.js'
         if not doc.exists():
@@ -555,6 +730,7 @@ def sync(folders, write):
             errors.append(str(e))
             continue
         warnings += lint(label(folder), fields)
+        docs[label(folder)] = fields
         new = render_js(folder, fields)
         old = js.read_text(encoding='utf-8') if js.exists() else ''
         diff = list(difflib.unified_diff(
@@ -569,11 +745,37 @@ def sync(folders, write):
         if write:
             js.write_text(new, encoding='utf-8', newline='\n')
             lines = sum(1 for line in diff if line.startswith('+') and not line.startswith('+++'))
-            print(f'Wrote {js.relative_to(ROOT)} ({lines} changed lines)')
+            print(ok('Wrote'), path(js.relative_to(ROOT)), dim(f'({lines} changed lines)'))
         else:
-            print(f'\n== {label(folder)}')
-            print('\n'.join(diff[2:]))
-    return warnings, len(changed)
+            print(f'\n{heading(label(folder))}')
+            print('\n'.join(diff_line(line) for line in paired(diff[2:])))
+    # (page label, diff lines) for the log
+    return warnings, [(label(folder), paired(diff[2:])) for folder, _, _, diff in changed], docs
+
+
+def write_log(project, mode, changed, warnings):
+    """A Markdown record of one run for one project, in its _logs/ folder
+    (gitignored): YYYYMMDD_HHMMSS_copy_sync.md, local time, 24-hour, so
+    the folder lists runs in order and no run replaces another."""
+    now = datetime.now()
+    verb = 'Wrote' if mode == 'write' else 'Would change'
+    lines = [
+        f'# Copy Sync, {now:%Y-%m-%d %H:%M:%S}',
+        '',
+        f'- Project: `{project.relative_to(ROOT).as_posix()}`',
+        f'- Mode: --{mode}',
+        f'- {verb}: {len(changed)} page(s)' + ''.join(f'\n  - `{page}`' for page, _ in changed),
+        f'- Warnings: {len(warnings)}',
+    ]
+    for page, diff in changed:
+        lines += ['', f'## {page}', '', '```diff', *diff, '```']
+    if warnings:
+        lines += ['', '## Warnings', '', *(f'- {line}' for line in warnings)]
+    folder = project / '_logs'
+    folder.mkdir(exist_ok=True)
+    file = folder / f'{now:%Y%m%d_%H%M%S}_copy_sync.md'
+    file.write_text('\n'.join(lines) + '\n', encoding='utf-8', newline='\n')
+    return file
 
 
 def main():
@@ -587,34 +789,45 @@ def main():
     mode.add_argument('--write', action='store_true', help='regenerate copy.js files from the docs')
     mode.add_argument('--export', action='store_true', help='build missing docs from the site')
     parser.add_argument('--force', action='store_true', help='with --export: rebuild every doc, replacing edits')
+    parser.add_argument('--log', action='store_true', help='with --check or --write: also write <project>/_logs/YYYYMMDD_HHMMSS_copy_sync.md')
     args = parser.parse_args()
+    if args.log and args.export:
+        parser.error('--log goes with --check or --write')
 
     try:
-        warnings, changed = [], 0
+        warnings, changed, logs = [], 0, []
         for project in find_projects(args.project):
             folders = page_folders(project)
+            docs, project_warnings, project_changed = {}, [], []
             if args.export:
                 export(project, folders, args.force)
             else:
-                page_warnings, page_changes = sync(folders, args.write)
-                warnings += page_warnings
-                changed += page_changes
+                project_warnings, project_changed, docs = sync(folders, args.write)
+                changed += len(project_changed)
             try:
-                warnings += check_tree(project, folders)
+                pages = site_pages(project)
+                project_warnings += check_tree(pages, folders)
+                project_warnings += check_labels(pages, docs)
             except CopyError as e:
-                warnings.append(f'Tree check skipped: {e}')
+                project_warnings.append(f'Tree check skipped: {e}')
+            warnings += project_warnings
+            if args.log:
+                mode = 'write' if args.write else 'check'
+                logs.append(write_log(project, mode, project_changed, project_warnings))
         if not args.export:
             if not changed:
-                print('Every copy.js already matches its doc.')
+                print(ok('Every copy.js already matches its doc.'))
             elif args.write:
-                print('Review with: git diff')
+                print(dim('Review with: git diff'))
             else:
-                print(f'\n{changed} page(s) would change. Run --write to apply.')
+                print(f'\n{warn(f"{changed} page(s) would change.")} {dim("Run --write to apply.")}')
         if warnings:
-            print(f'\n{len(warnings)} warning(s):')
-            print('\n'.join(f'  {line}' for line in warnings))
+            print(f'\n{warn(f"{len(warnings)} warning(s):")}')
+            print('\n'.join(warn(f'  {line}') for line in warnings))
+        for file in logs:
+            print(ok('Log:'), path(file.relative_to(ROOT)))
     except CopyError as e:
-        sys.exit(f'Problems found, nothing written:\n{e}')
+        fail('Problems Found, Nothing Written', str(e))
 
 
 if __name__ == '__main__':

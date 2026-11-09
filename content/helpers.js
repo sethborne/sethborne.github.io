@@ -81,15 +81,37 @@ export const detailPage = (id, title, tags, more = {}) => ({
 export const fromCopy = (copy) => {
   // [title, more with the copy fields under it]
   const fill = (id, more = {}) => {
-    const {title = id, content: copyContent, sections: copySections = [], ...fields} = copy;
+    const {title = id, content: copyContent, sections: copySections = [], gallery: copyGallery = [], ...fields} = copy;
     if (!copy.title) console.warn(`No title for page "${id}" in its copy.js`);
-    const content = (copyContent || more.content) && {...copyContent, ...more.content};
-    // Sections pair up by position: the doc's first heading goes with
-    // index.js's first section, and so on
+    // A gallery's titles and captions pair up with its images by
+    // position. `where` names it in the warning.
+    const withCaptions = (piece, captions, where) => {
+      if (!piece?.gallery) return piece;
+      const {images} = piece.gallery;
+      if (images.length !== captions.length) {
+        console.warn(`Page "${id}"${where}: ${images.length} gallery images in index.js, ${captions.length} in its doc`);
+      }
+      // "| Before | After" on a doc line only means something for a pair
+      captions.forEach((caption, i) => {
+        if (caption.labels && !images[i]?.compare) {
+          console.warn(`Page "${id}"${where}: doc line ${i + 1} has labels, but image ${i + 1} has no compare`);
+        }
+      });
+      return {...piece, gallery: {...piece.gallery, images: images.map((image, i) => ({...captions[i], ...image}))}};
+    };
+    // The page's own gallery: the doc's top-level Gallery field
+    const content = (copyContent || more.content) && withCaptions({...copyContent, ...more.content}, copyGallery, '');
+    // Sections pair up by position: the doc's first section (Heading 3)
+    // goes with index.js's first section, and so on. Each carries its own
+    // gallery captions, taken out first so index.js's gallery isn't replaced.
     if (more.sections && more.sections.length !== copySections.length) {
       console.warn(`Page "${id}": ${more.sections.length} sections in index.js, ${copySections.length} in its doc`);
     }
-    const sections = more.sections?.map((section, i) => ({...copySections[i], ...section}));
+    const sections = more.sections?.map((section, i) => {
+      const {gallery: captions = [], ...copyFields} = copySections[i] ?? {};
+      const merged = {...copyFields, ...section};
+      return withCaptions(merged, captions, `, section "${merged.title ?? section.id}"`);
+    });
     return [title, {...fields, ...more, ...(content && {content}), ...(sections && {sections})}];
   };
   return {
@@ -108,7 +130,8 @@ export const fromCopy = (copy) => {
 // lists them in `sections`, each rendered as a heading, an optional
 // intro line, and its piece. A section takes the same fields as
 // `content` (turntable, embed, link, fallback, tryThis...); its heading
-// and intro come from the doc's Sections field, matched by position:
+// and intro come from the doc's Sections field (a Heading 3 per section),
+// matched by position:
 //   sections: [
 //     {id: 'phasing-model', turntable: turntable(import.meta.url, {...})},
 //   ]
@@ -152,7 +175,7 @@ export const pageImage = (here, name, alt, widths = PAGE_WIDTHS[name] ?? ALL_WID
 // A turntable: a 3D model you drag to turn, from rendered frames (one
 // image per 5° step), optionally in phases (build-out over time). The
 // frames live in img/turntable/ beside the page's index.js, written by
-// tools/turntable_frames.ps1 from the raw renders in img/_raw/turntable/:
+// tools/turntable_frames.mjs from the raw renders in img/_raw/turntable/:
 //   img/turntable/phase_a/base_00_640.jpg   the render, one file per size
 //   img/turntable/phase_a/base_00_1024.jpg
 //   img/turntable/phase_a/color_00.png      ID pass: one flat color per building
@@ -204,6 +227,92 @@ export const turntable = (here, {phases, heading, alt, ...more}) => ({
   phases,
   heading,
   alt,
+  ...more,
+});
+
+// A gallery: a grid of still images (renderings, photosims) that open
+// in a lightbox. The files live in img/gallery/ beside the page's
+// index.js, written by tools/gallery_images.mjs from one full-size
+// export each in img/_raw/gallery/:
+//   img/gallery/aerial_look_sw_800.jpg ... _2560.jpg   grid + lightbox
+//   img/gallery/aerial_look_sw_full.jpg                native size ("View Full Size")
+// List the images by name, in order (grid, lightbox and the doc's
+// Gallery lines all follow it). A name alone, or {name, focus} to frame
+// a crop in the grid (CSS object-position, e.g. 'center 30%'; the
+// lightbox always shows the whole image):
+//   gallery: gallery(import.meta.url, {
+//     images: ['aerial_look_sw', {name: 'plaza_square', focus: 'center 70%'}],
+//   })
+// Titles and captions come from the doc ("Title" or "Title: caption",
+// one line per image): under the section's Heading 4 Gallery, or the
+// top-level Gallery field for content.gallery; through fromCopy().
+// Settings (any of them can be passed to override the default):
+//   columns        grid columns on tablets and up, to start with
+//   columnChoices  the column control's buttons (600px and up)
+//   phoneColumns   grid columns on phones, to start with
+//   phoneColumnChoices  the control's buttons on phones ([] for none)
+//   aspect         the thumbs' shape, a CSS aspect-ratio (crops with cover)
+//   columnControl  'icons' (little grid drawings) or 'tabs' (View tab look)
+//   thumbHover     'lift' (like cards: lift, orange glow, orange name) or
+//                  'zoom' (orange ring, image zooms in)
+//   position       lightbox: 'bar' (a track you can drag along) or 'dots'
+//   barFill        bar: orange from the start up to the current image
+//   ticks          bar: a mark for each image
+//   tickShape      'diamond' or 'dot'
+//   tickSize       tick size in px
+//   widths         export widths on disk (the _full file is extra)
+//   compareThumb   a compare image's thumb: 'badge' (Compare tag) or
+//                  'split' (both images, cut at a line)
+//   compareSplit   'x' (upright line, drag left/right) or 'y' (line
+//                  across, drag up/down); an image's `split` overrides it
+//   compareBadge   the compare thumb tag: 'text', 'icon' or 'both'
+//   compareHandle  the knob on the line: 'circle', 'solid', 'pill' or 'arrows'
+//   compareLine    the line's color: 'white' or 'accent'
+//   compareHint    the line slides once when a compare image opens
+//   compareLabels  [before, after]; null = ui.gallery.compareLabels; one
+//                  pair's doc line can override it ("Title | After | Changes")
+//   filter         chip rows above the grid, from each image's `tags`
+//                  (content/gallery-tags.js terms); off unless set true
+//   counts         filter chips' counts: 'bar' (a thin rule, then the
+//                  number), 'plain', 'badge' or 'off'
+//   rowLines       a chip row folds after this many lines ("+N More");
+//                  0 never folds
+//   filteredMark   while any chip is picked: 'line' (the line under each
+//                  thumb's image turns orange) or 'off'
+// Compare image (before/after slider): {name, compare: '<bottom image>'}.
+//   `name` is the top image (after), `compare` the bottom one (before;
+//   left of the line for x, below it for y);
+//   both need the same size and framing.
+const GALLERY_DEFAULTS = {
+  columns: 4,
+  columnChoices: [2, 3, 4],
+  phoneColumns: 2,
+  phoneColumnChoices: [1, 2],
+  aspect: '4 / 3',
+  columnControl: 'icons',
+  thumbHover: 'lift',
+  position: 'bar',
+  barFill: true,
+  ticks: true,
+  tickShape: 'diamond',
+  tickSize: 6,
+  widths: [800, 1280, 1600, 2560],
+  compareThumb: 'badge',
+  compareSplit: 'x',
+  compareBadge: 'icon',
+  compareHandle: 'arrows',
+  compareLine: 'accent',
+  compareHint: true,
+  compareLabels: null,
+  filter: false,
+  counts: 'bar',
+  rowLines: 2,
+  filteredMark: 'line',
+};
+export const gallery = (here, {images, ...more}) => ({
+  ...GALLERY_DEFAULTS,
+  base: new URL('img/gallery/', here).href,
+  images: images.map((image) => (typeof image === 'string' ? {name: image} : image)),
   ...more,
 });
 

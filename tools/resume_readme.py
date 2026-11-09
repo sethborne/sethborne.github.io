@@ -38,6 +38,7 @@ from pathlib import Path
 
 # Same folder: reuse the Word XML helpers from the copy pipeline
 from copy_sync import R, w
+from term import diff_line, dim, fail, ok, paired, path, warn
 
 ROOT = Path(__file__).resolve().parent.parent
 DOC = ROOT / 'docs' / 'resume' / 'seth_borne_resume_general.docx'
@@ -298,24 +299,24 @@ def main():
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
     if not DOC.exists():
-        sys.exit(f'No resume doc at {DOC.relative_to(ROOT)}')
+        fail('No Resume Doc', path(DOC.relative_to(ROOT), sys.stderr))
     body, warnings = to_markdown(read_resume(DOC))
     old = README.read_text(encoding='utf-8') if README.exists() else ''
     new = with_section(old, body)
 
     if old == new:
-        print('README.md already matches the resume.')
+        print(ok('README.md already matches the resume.'))
     elif args.write:
         README.write_text(new, encoding='utf-8', newline='\n')
-        print('Wrote README.md. Review with: git diff README.md (or Source Control)')
+        print(ok('Wrote README.md.'), dim('Review with: git diff README.md (or Source Control)'))
     else:
         diff = difflib.unified_diff(old.splitlines(), new.splitlines(), 'README.md', 'README.md (new)', lineterm='')
-        print('\n'.join(diff))
-        print('\nREADME.md would change. Run --write to apply.')
+        print('\n'.join(diff_line(line) for line in paired(diff)))
+        print(f'\n{warn("README.md would change.")} {dim("Run --write to apply.")}')
 
     if warnings:
-        print(f'\n{len(warnings)} warning(s):')
-        print('\n'.join(f'  {line}' for line in warnings))
+        print(f'\n{warn(f"{len(warnings)} warning(s):")}')
+        print('\n'.join(warn(f'  {line}') for line in warnings))
 
 
 if __name__ == '__main__':

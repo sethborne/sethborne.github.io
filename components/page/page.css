@@ -145,9 +145,97 @@
   margin-top: 56px;
 }
 
+/* A jump link lands the heading clear of the fixed header and the
+   breadcrumb bar under it, with a little air */
+.page-section {
+  scroll-margin-top: calc(var(--nav-height) + 56px);
+}
+
 .page-section h2 {
   font-size: 1.4rem;
   margin-bottom: 12px;
+}
+
+/* Focus is moved here by a jump link, not by Tab: no ring */
+.page-section h2:focus {
+  outline: none;
+}
+
+/* "On This Page" (page.js renderJumpLinks): a gray mono label, then the
+   sections as orange mono links (the lightbox's View Full Size look),
+   each with a down chevron, · between them; wraps on phones */
+.page-jump {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+  margin-top: 18px;
+}
+
+/* Label and links share one size (the eyebrow size), so the label's
+   caps and the links' capitals stand the same height */
+.page-jump-label {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.page-jump ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.page-jump li + li::before {
+  content: '·';
+  margin: 0 10px;
+  color: var(--border);
+}
+
+.page-jump-link {
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .page-jump-link:hover {
+    color: var(--accent-dim);
+  }
+}
+
+/* A down chevron drawn in CSS: a square's right and bottom borders,
+   turned 45°. currentColor, so it follows the link's orange and hover;
+   em sizes, so it scales with the text. No font glyph, so it looks the
+   same on every device. */
+.page-jump-chevron {
+  display: inline-block;
+  width: 0.4em;
+  height: 0.4em;
+  margin-left: 0.55em;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  /* The turned square's point sits on the baseline area, centered on
+     the lowercase letters */
+  vertical-align: 0.28em;
+}
+
+/* Text-link focus (the focus-styles pass): underline, not a box */
+.page-jump-link:focus-visible {
+  outline: none;
+  text-decoration: underline 2px;
+  text-underline-offset: 4px;
 }
 
 .page-section-text {
