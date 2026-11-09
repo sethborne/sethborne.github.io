@@ -12,6 +12,7 @@ import {createGallery} from '../gallery/gallery.js';
 import {createTurntable} from '../turntable/turntable.js';
 import {createWriteup} from '../writeup/writeup.js';
 import ui from '../../content/ui.js';
+import {PAGE_DEFAULTS} from '../../content/helpers.js';
 
 // tabindex -1: app.js moves focus here after navigation, like a real
 // page load, without adding the heading to the Tab order.
@@ -94,11 +95,37 @@ const renderSection = ({title, text, ...fields}) =>
 // scrolls; the URL never changes. Smooth or instant follows the page's
 // CSS scroll-behavior (instant under reduced motion); scroll-margin-top
 // on .page-section keeps the heading clear of the header and the bar.
-const renderJumpLinks = (sections) => {
+// Each section heading also gets an up button at its right end, back to
+// the page top, which focuses that section's jump link: Tab carries on
+// from there, and Enter goes straight back down. `look` is the page's
+// backUp setting (PAGE_DEFAULTS in content/helpers.js).
+const BACK_UP_LOOKS = ['chevron', 'text', 'square'];
+
+const renderJumpLinks = (sections, look) => {
   if (sections.length < 2) return null;
   const jump = (section) => () => {
     section.querySelector('h2').focus({preventScroll: true});
     section.scrollIntoView({block: 'start'});
+  };
+  const backUp = (link) => () => {
+    link.focus({preventScroll: true});
+    window.scrollTo({top: 0});
+  };
+  const addBackUp = (section, link) => {
+    const up = el(
+      'button',
+      {
+        type: 'button',
+        class: `page-back-up page-back-up--${look}`,
+        'aria-label': ui.page.backUp,
+        title: ui.page.backUp,
+      },
+      look === 'text' &&
+        el('span', {class: 'page-back-up-text', 'aria-hidden': 'true'}, ui.page.backUpText),
+      el('span', {class: 'page-back-up-chevron', 'aria-hidden': 'true'}),
+    );
+    up.addEventListener('click', backUp(link));
+    section.querySelector('h2').append(up);
   };
   return el(
     'nav',
@@ -115,10 +142,21 @@ const renderJumpLinks = (sections) => {
           el('span', {class: 'page-jump-chevron', 'aria-hidden': 'true'}),
         );
         button.addEventListener('click', jump(section));
+        // After the link took the heading's text, so the label stays clean
+        addBackUp(section, button);
         return el('li', {}, button);
       }),
     ),
   );
+};
+
+// The page's own backUp, else the default; a typo warns and falls back,
+// like an unknown aside piece
+const backUpLook = (node) => {
+  const look = node.backUp ?? PAGE_DEFAULTS.backUp;
+  if (BACK_UP_LOOKS.includes(look)) return look;
+  console.warn(`Unknown backUp "${look}" on ${node.id}; using "${PAGE_DEFAULTS.backUp}"`);
+  return PAGE_DEFAULTS.backUp;
 };
 
 const renderNotFound = (path) => {
@@ -163,7 +201,7 @@ export const createPage = ({tree, path}) => {
         {class: 'pills', 'aria-label': 'Tags'},
         labels.map((label) => el('li', {class: 'pill'}, label)),
       ),
-    renderJumpLinks(sections),
+    renderJumpLinks(sections, backUpLook(node)),
   );
   // Pieces that can go in the aside, by the names the node's `aside`
   // field uses (content/projects/). Listed ones move there, in order; the

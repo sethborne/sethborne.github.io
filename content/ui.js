@@ -59,6 +59,10 @@ export default {
     childrenTitle: 'In This Project',
     // Under the tags of a page with two or more sections: links down to each
     jumpLabel: 'On This Page',
+    // The up button before each of those section headings (tooltip + screen readers)
+    backUp: 'Back to Top',
+    // Its visible word in the 'text' look (PAGE_DEFAULTS.backUp)
+    backUpText: 'Top',
     notFoundTitle: 'Page Not Found',
     notFoundText: (path) => `Nothing lives at #/${path}.`,
     notFoundBack: 'Back to Projects',

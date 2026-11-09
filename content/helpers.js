@@ -316,6 +316,17 @@ export const gallery = (here, {images, ...more}) => ({
   ...more,
 });
 
+// Page settings, for every page. A page can override one in its own
+// index.js (`backUp: 'text'` beside its sections); page.js reads the
+// page's value first, then this.
+//   backUp   the Back to Top button at the right end of each section
+//            heading (pages with "On This Page" links): 'chevron' (the
+//            chevron alone), 'text' ("Top" + the chevron) or 'square'
+//            (the chevron in an outlined square)
+export const PAGE_DEFAULTS = {
+  backUp: 'chevron',
+};
+
 // Tag sets shared across projects. A set used by one project only
 // lives in that project's file.
 export const EB_APP = [TOOL_EXPERIENCE_BUILDER, TOOL_ARCGIS_ONLINE];
