@@ -113,10 +113,14 @@
 }
 
 /* One button holds the image and the name, so hover and focus cover
-   both and Tab stops once per image */
+   both and Tab stops once per image. It fills its grid cell (the cells
+   in a row stretch to the tallest), and the name takes the spare height,
+   so a one-line title's card ends level with a two-line one beside it */
 .gallery-item {
-  display: block;
+  display: flex;
+  flex-direction: column;
   width: 100%;
+  height: 100%;
   padding: 0;
   font: inherit;
   text-align: left;
@@ -137,6 +141,7 @@
    needs the page at full height) */
 .gallery-thumb {
   display: block;
+  flex-shrink: 0;
   aspect-ratio: var(--thumb-aspect, 4 / 3);
   overflow: hidden;
   background: var(--bg-soft);
@@ -152,6 +157,7 @@
 
 .gallery-name {
   display: block;
+  flex-grow: 1;
   padding: 10px 12px 11px;
   font-size: 0.88rem;
   font-weight: 500;
