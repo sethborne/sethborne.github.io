@@ -56,16 +56,16 @@ export default {
           text: 'Image description for Bldg L1 Exterior',
         },
         {
-          title: 'Des ',
-          text: 'Image description for',
+          title: 'Building L1 - Typical Office Interior',
+          text: 'Image description for Bldg Office L1 Interior',
         },
         {
           title: 'Building L2 - Exterior ',
           text: 'Image description for Bldg L2 Exterior',
         },
         {
-          title: 'Des ',
-          text: 'Image description for',
+          title: 'Building L2 - Typical Office Interior',
+          text: 'Image description for Bldg Office L2 Interior',
         },
       ],
     },
