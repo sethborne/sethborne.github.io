@@ -91,6 +91,12 @@ export const fromCopy = (copy) => {
       if (images.length !== captions.length) {
         console.warn(`Page "${id}"${where}: ${images.length} gallery images in index.js, ${captions.length} in its doc`);
       }
+      // "| Before | After" on a doc line only means something for a pair
+      captions.forEach((caption, i) => {
+        if (caption.labels && !images[i]?.compare) {
+          console.warn(`Page "${id}"${where}: doc line ${i + 1} has labels, but image ${i + 1} has no compare`);
+        }
+      });
       return {...piece, gallery: {...piece.gallery, images: images.map((image, i) => ({...captions[i], ...image}))}};
     };
     // The page's own gallery: the doc's top-level Gallery field
@@ -243,7 +249,8 @@ export const turntable = (here, {phases, heading, alt, ...more}) => ({
 // Settings (any of them can be passed to override the default):
 //   columns        grid columns on tablets and up, to start with
 //   columnChoices  the column control's buttons (600px and up)
-//   phoneColumns   grid columns on phones (no control there)
+//   phoneColumns   grid columns on phones, to start with
+//   phoneColumnChoices  the control's buttons on phones ([] for none)
 //   aspect         the thumbs' shape, a CSS aspect-ratio (crops with cover)
 //   columnControl  'icons' (little grid drawings) or 'tabs' (View tab look)
 //   thumbHover     'lift' (like cards: lift, orange glow, orange name) or
@@ -254,10 +261,33 @@ export const turntable = (here, {phases, heading, alt, ...more}) => ({
 //   tickShape      'diamond' or 'dot'
 //   tickSize       tick size in px
 //   widths         export widths on disk (the _full file is extra)
+//   compareThumb   a compare image's thumb: 'badge' (Compare tag) or
+//                  'split' (both images, cut at a line)
+//   compareSplit   'x' (upright line, drag left/right) or 'y' (line
+//                  across, drag up/down); an image's `split` overrides it
+//   compareBadge   the compare thumb tag: 'text', 'icon' or 'both'
+//   compareHandle  the knob on the line: 'circle', 'solid', 'pill' or 'arrows'
+//   compareLine    the line's color: 'white' or 'accent'
+//   compareHint    the line slides once when a compare image opens
+//   compareLabels  [before, after]; null = ui.gallery.compareLabels; one
+//                  pair's doc line can override it ("Title | After | Changes")
+//   filter         chip rows above the grid, from each image's `tags`
+//                  (content/gallery-tags.js terms); off unless set true
+//   counts         filter chips' counts: 'bar' (a thin rule, then the
+//                  number), 'plain', 'badge' or 'off'
+//   rowLines       a chip row folds after this many lines ("+N More");
+//                  0 never folds
+//   filteredMark   while any chip is picked: 'line' (the line under each
+//                  thumb's image turns orange) or 'off'
+// Compare image (before/after slider): {name, compare: '<bottom image>'}.
+//   `name` is the top image (after), `compare` the bottom one (before;
+//   left of the line for x, below it for y);
+//   both need the same size and framing.
 const GALLERY_DEFAULTS = {
   columns: 4,
   columnChoices: [2, 3, 4],
   phoneColumns: 2,
+  phoneColumnChoices: [1, 2],
   aspect: '4 / 3',
   columnControl: 'icons',
   thumbHover: 'lift',
@@ -267,6 +297,17 @@ const GALLERY_DEFAULTS = {
   tickShape: 'diamond',
   tickSize: 6,
   widths: [800, 1280, 1600, 2560],
+  compareThumb: 'badge',
+  compareSplit: 'x',
+  compareBadge: 'icon',
+  compareHandle: 'arrows',
+  compareLine: 'accent',
+  compareHint: true,
+  compareLabels: null,
+  filter: false,
+  counts: 'bar',
+  rowLines: 2,
+  filteredMark: 'line',
 };
 export const gallery = (here, {images, ...more}) => ({
   ...GALLERY_DEFAULTS,

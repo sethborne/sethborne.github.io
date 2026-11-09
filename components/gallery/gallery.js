@@ -4,13 +4,18 @@
 // content/helpers.js, which lists every setting; titles and captions come
 // from the page's doc (Gallery field). Settings become classes and
 // custom properties on the root, so most looks live in gallery.css.
+// With `filter: true`, chip rows above the grid (filter.js) narrow it.
 import {el} from '../../js/dom.js';
 import {fallbackFor, srcsetFor} from '../../js/images.js';
 import ui from '../../content/ui.js';
+import {GALLERY_FACETS} from '../../content/gallery-tags.js';
+import {createCompare} from './compare.js';
+import {createGalleryFilter} from './filter.js';
 
 // The column choice lasts for the tab's session and is shared by every
 // gallery (like scroll memory): a new tab starts from the default
-const STORE_KEY = 'gallery-columns';
+// Phones keep their own choice: 2 columns there isn't 2 on a desktop
+const STORE_KEYS = {wide: 'gallery-columns', phone: 'gallery-columns-phone'};
 const SWIPE_PX = 40;
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -22,6 +27,12 @@ const fullOf = ({base}, {name}) => `${base}${name}_full.jpg`;
 const titleOf = ({title, name}) => title ?? name.replaceAll('_', ' ');
 // Alt text: the title, plus the caption when there is one
 const altOf = (image) => (image.text ? `${titleOf(image)}. ${image.text}` : titleOf(image));
+// A compare image's bottom picture: `compare` names its file
+const pairOf = (image) => ({name: image.compare});
+// A compare image's two layer names: its own (the doc line's "| A | B"),
+// else the gallery's compareLabels, else Before / After (ui.js)
+const labelsOf = (gallery, image) => image.labels ?? gallery.compareLabels ?? ui.gallery.compareLabels;
+const splitOf = (gallery, image) => image.split ?? gallery.compareSplit;
 // Where image i sits along the bar, in %: first at the left end, last at
 // the right. The knob and the ticks both use it, so they always line up.
 const spotOf = (i, count) => (count > 1 ? (i / (count - 1)) * 100 : 50);
@@ -31,20 +42,30 @@ const indexAt = (fraction, count) => Math.round(Math.min(Math.max(fraction, 0), 
 const thumbSizes = (columns, phoneColumns) =>
   `(min-width: 600px) ${Math.ceil(100 / columns)}vw, ${Math.ceil(100 / phoneColumns)}vw`;
 
-const readColumns = (choices, fallback) => {
+const readColumns = (key, choices, fallback) => {
   try {
-    const saved = Number(sessionStorage.getItem(STORE_KEY));
+    const saved = Number(sessionStorage.getItem(key));
     return choices.includes(saved) ? saved : fallback;
   } catch {
     return fallback; // storage blocked (some private modes)
   }
 };
-const saveColumns = (n) => {
+const saveColumns = (key, n) => {
   try {
-    sessionStorage.setItem(STORE_KEY, String(n));
+    sessionStorage.setItem(key, String(n));
   } catch {
     // The choice just isn't remembered
   }
+};
+
+// Filter picks live on the history entry (history.state), keyed by the
+// gallery's place on the page, so Back, Forward and reload keep them and
+// a link click (a new, empty entry) starts clean, like scroll memory.
+const readPicks = (key) => history.state?.galleryPicks?.[key] ?? [];
+const savePicks = (key, picks) => {
+  const all = {...history.state?.galleryPicks, [key]: picks};
+  // No URL argument: the URL stays as it is
+  history.replaceState({...history.state, galleryPicks: all}, '');
 };
 
 // Little grid drawing for the 'icons' column control: n columns, two rows
@@ -64,9 +85,33 @@ const gridIcon = (n) => {
   return svg;
 };
 
-// ----- Column control (tablets and up; gallery.css hides it on phones) -----
+// Compare badge icon: two images in plan, outlines only. The top one
+// sits down and right, and hides the lines of the one below where they
+// cross it: the lower one is drawn as just its visible edges (an open
+// path), so no fill or mask is needed.
+const compareIcon = () => {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 16 14');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('class', 'gallery-badge-icon');
+  const stroke = {fill: 'none', stroke: 'currentColor', 'stroke-width': 1.4, 'stroke-linejoin': 'round'};
+  const add = (tag, attrs) => {
+    const node = document.createElementNS(SVG_NS, tag);
+    for (const [key, value] of Object.entries({...stroke, ...attrs})) node.setAttribute(key, value);
+    svg.append(node);
+  };
+  // Lower image (1,1 to 11,9.5): its bottom and right edges stop where
+  // they meet the top image's outline
+  add('path', {d: 'M5 9.5 H1 V1 H11 V4.5'});
+  add('rect', {x: 5, y: 4.5, width: 10, height: 8.5, rx: 1.2});
+  return svg;
+};
 
-const createColumnControl = ({choices, look, onPick}) => {
+// ----- Column control -----
+// One per screen size: 'wide' (600px and up) and 'phone'; gallery.css
+// shows the one that fits. No choices, no control.
+
+const createColumnControl = ({size, choices, look, onPick}) => {
   const labelId = `gallery-cols-${Math.random().toString(36).slice(2, 8)}`;
   const buttons = choices.map((n) => {
     const text = String(n);
@@ -79,7 +124,7 @@ const createColumnControl = ({choices, look, onPick}) => {
   });
   const element = el(
     'div',
-    {class: `gallery-columns look-${look}`},
+    {class: `gallery-columns gallery-columns--${size} look-${look}`, hidden: choices.length < 2},
     el('span', {class: 'gallery-columns-label', id: labelId}, ui.gallery.columns),
     el('div', {class: look === 'tabs' ? 'view-tab-list' : 'gallery-col-icons', role: 'group', 'aria-labelledby': labelId}, buttons),
   );
@@ -100,13 +145,21 @@ const createLightbox = ({title, gallery, onClose}) => {
   const name = el('h2', {class: 'gallery-lb-title'});
   const caption = el('p', {class: 'gallery-lb-caption'});
   const live = el('span', {class: 'visually-hidden', 'aria-live': 'polite'});
-  const full = el(
-    'a',
-    {class: 'gallery-lb-full', target: '_blank', rel: 'noopener'},
-    ui.gallery.fullSize,
-    el('span', {'aria-hidden': 'true'}, ' ↗'),
-    el('span', {class: 'visually-hidden'}, ' (opens in a new tab)'),
-  );
+  const fullLink = (label) =>
+    el(
+      'a',
+      {class: 'gallery-lb-full', target: '_blank', rel: 'noopener'},
+      el('span', {}, label),
+      el('span', {'aria-hidden': 'true'}, ' ↗'),
+      el('span', {class: 'visually-hidden'}, ' (opens in a new tab)'),
+    );
+  const full = fullLink(ui.gallery.fullSize);
+  // A compare image links both files, one per label (set per image)
+  const fullBefore = fullLink('');
+  const fullAfter = fullLink('');
+  const fullPair = el('span', {class: 'gallery-lb-full-pair', hidden: true}, fullBefore, fullAfter);
+  const stage = el('div', {class: 'gallery-lb-stage'}, img);
+  let compare = null;
   const button = (cls, label, glyph) =>
     el('button', {type: 'button', class: `gallery-lb-btn ${cls}`, 'aria-label': label}, el('span', {'aria-hidden': 'true'}, glyph));
   const close = button('gallery-lb-close', 'Close', '×');
@@ -133,8 +186,8 @@ const createLightbox = ({title, gallery, onClose}) => {
     el(
       'div',
       {class: 'gallery-lb'},
-      el('div', {class: 'gallery-lb-stage'}, img),
-      el('div', {class: 'gallery-lb-meta'}, el('div', {class: 'gallery-lb-text'}, name, caption, live), full),
+      stage,
+      el('div', {class: 'gallery-lb-meta'}, el('div', {class: 'gallery-lb-text'}, name, caption, live), full, fullPair),
       positionEl,
     ),
     close,
@@ -145,14 +198,46 @@ const createLightbox = ({title, gallery, onClose}) => {
 
   // Warm the neighbors so the arrows feel instant
   const preload = (i) => {
-    const files = filesOf(gallery, images[(i + count) % count]);
-    Object.assign(new Image(), {sizes: '100vw', srcset: srcsetFor(files)});
+    const image = images[(i + count) % count];
+    for (const one of image.compare ? [image, pairOf(image)] : [image]) {
+      Object.assign(new Image(), {sizes: '100vw', srcset: srcsetFor(filesOf(gallery, one))});
+    }
+  };
+
+  // A compare image swaps the plain <img> for the compare box
+  const showCompare = (image) => {
+    compare?.destroy();
+    compare?.element.remove();
+    compare = image.compare
+      ? createCompare({
+          bottom: filesOf(gallery, pairOf(image)),
+          top: filesOf(gallery, image),
+          split: splitOf(gallery, image),
+          labels: labelsOf(gallery, image),
+          alt: altOf(image),
+          hint: gallery.compareHint,
+          handle: gallery.compareHandle,
+          line: gallery.compareLine,
+        })
+      : null;
+    if (compare) stage.append(compare.element);
+    img.hidden = Boolean(compare);
+    full.hidden = Boolean(compare);
+    fullPair.hidden = !compare;
+    if (compare) {
+      const [before, after] = labelsOf(gallery, image);
+      fullBefore.firstChild.textContent = before;
+      fullAfter.firstChild.textContent = after;
+      fullBefore.href = fullOf(gallery, pairOf(image));
+      fullAfter.href = fullOf(gallery, image);
+    }
   };
 
   const show = (i) => {
     index = (i + count) % count;
     const image = images[index];
     const files = filesOf(gallery, image);
+    showCompare(image);
     img.srcset = srcsetFor(files);
     img.src = fallbackFor(files);
     img.alt = altOf(image);
@@ -173,7 +258,10 @@ const createLightbox = ({title, gallery, onClose}) => {
   prev.addEventListener('click', () => show(index - 1));
   next.addEventListener('click', () => show(index + 1));
   close.addEventListener('click', () => dialog.close());
-  dialog.addEventListener('close', () => onClose(index));
+  dialog.addEventListener('close', () => {
+    compare?.destroy();
+    onClose(index);
+  });
   dialog.addEventListener('keydown', (event) => {
     if (event.key === 'ArrowRight') show(index + 1);
     else if (event.key === 'ArrowLeft') show(index - 1);
@@ -181,7 +269,8 @@ const createLightbox = ({title, gallery, onClose}) => {
   img.addEventListener('click', () => canOpen && window.open(full.href, '_blank', 'noopener'));
   // A click on the dark area around the image closes
   dialog.addEventListener('click', (event) => {
-    if (event.target === dialog || event.target.classList.contains('gallery-lb-stage')) dialog.close();
+    const {classList} = event.target;
+    if (event.target === dialog || classList.contains('gallery-lb-stage') || classList.contains('gallery-compare')) dialog.close();
   });
 
   // Scrub: press on the bar and drag (touch or mouse). A tap lands
@@ -231,44 +320,124 @@ const createLightbox = ({title, gallery, onClose}) => {
 
 // ----- Gallery -----
 
-export const createGallery = ({title, gallery}) => {
-  const {images, columnChoices, phoneColumns, aspect, columnControl, thumbHover, position, barFill, ticks, tickShape, tickSize} = gallery;
-  let columns = readColumns(columnChoices, gallery.columns);
+// lead: an optional node at the left of the column control's row; the
+// filter's status line goes there when the gallery has no lead of its own.
+// key: the gallery's place on its page (a section id, or 'content'), for
+// keeping filter picks on the history entry.
+export const createGallery = ({title, gallery, lead, key = 'content'}) => {
+  const {images, columnChoices, phoneColumnChoices, aspect, columnControl, thumbHover, position, barFill, ticks, tickShape, tickSize, compareThumb, compareBadge, filteredMark} = gallery;
+  const choices = {wide: columnChoices, phone: phoneColumnChoices};
+  const columns = {
+    wide: readColumns(STORE_KEYS.wide, choices.wide, gallery.columns),
+    phone: readColumns(STORE_KEYS.phone, choices.phone, gallery.phoneColumns),
+  };
 
-  const thumbs = images.map((image, i) => {
+  const thumbPic = (image, cls) => {
     const files = filesOf(gallery, image);
-    const pic = el('img', {
+    return el('img', {
+      class: cls,
       src: fallbackFor(files),
       srcset: srcsetFor(files),
-      sizes: thumbSizes(columns, phoneColumns),
+      sizes: thumbSizes(columns.wide, columns.phone),
       // The button's label names the image, so the img is decorative
       alt: '',
       loading: 'lazy',
       decoding: 'async',
       style: image.focus && `object-position: ${image.focus}`,
     });
+  };
+
+  // A compare thumb: 'badge' (the top image + a Compare tag) or 'split'
+  // (both images, cut at a line in the middle)
+  const thumbOf = (image) => {
+    if (!image.compare) return {pics: [thumbPic(image)]};
+    if (compareThumb === 'split') {
+      return {
+        pics: [thumbPic({...image, name: image.compare}), thumbPic(image, 'gallery-thumb-top')],
+        extra: el('span', {class: 'gallery-thumb-line'}),
+        cls: `gallery-thumb--split gallery-thumb--${splitOf(gallery, image)}`,
+      };
+    }
+    const badge = el(
+      'span',
+      {class: `gallery-badge gallery-badge--${compareBadge}`},
+      compareBadge !== 'text' && compareIcon(),
+      compareBadge !== 'icon' && el('span', {}, ui.gallery.compare),
+    );
+    return {pics: [thumbPic(image)], extra: badge};
+  };
+
+  const thumbs = images.map((image, i) => {
+    const {pics, extra, cls} = thumbOf(image);
+    const [before, after] = labelsOf(gallery, image);
+    const label = image.compare ? `${altOf(image)}, ${before} and ${after}` : altOf(image);
     const item = el(
       'button',
-      {type: 'button', class: 'gallery-item', 'aria-label': `${altOf(image)} (open larger)`},
-      el('span', {class: 'gallery-thumb'}, pic),
+      {type: 'button', class: 'gallery-item', 'aria-label': `${label} (open larger)`},
+      el('span', {class: cls ? `gallery-thumb ${cls}` : 'gallery-thumb'}, pics, extra),
       el('span', {class: 'gallery-name', 'aria-hidden': 'true'}, titleOf(image)),
     );
-    item.addEventListener('click', () => lightbox.open(i));
-    return {item, pic};
+    // The lightbox holds the visible images only, so a thumb opens at its
+    // place among them
+    item.addEventListener('click', () => lightbox.open(visible.indexOf(i)));
+    return {item, pics, cell: el('li', {}, item)};
   });
 
-  // Closing returns focus to the thumb of the image last shown
-  const lightbox = createLightbox({title, gallery, onClose: (i) => thumbs[i].item.focus()});
+  // The images the filter lets through (all of them without a filter).
+  // The lightbox is built for exactly those, so its arrows, bar and ticks
+  // step through the filtered set; closing returns focus to the thumb.
+  let visible = images.map((_, i) => i);
+  const buildLightbox = () =>
+    createLightbox({
+      title,
+      gallery: {...gallery, images: visible.map((i) => images[i])},
+      onClose: (j) => thumbs[visible[j]].item.focus(),
+    });
+  let lightbox = buildLightbox();
 
-  const grid = el('ul', {class: 'gallery-grid'}, thumbs.map(({item}) => el('li', {}, item)));
-  const control = createColumnControl({choices: columnChoices, look: columnControl, onPick: (n) => setColumns(n, true)});
+  // Hide the others in place; the chips can't change while the lightbox
+  // is open, so swapping it for a new one here is safe. iltered (any
+  // chip picked) marks the grid (filteredMark), even when a pick matches
+  // every image
+  const showOnly = (indexes, filtered) => {
+    visible = indexes;
+    element.classList.toggle('is-filtered', filtered);
+    const shown = new Set(indexes);
+    thumbs.forEach(({cell}, i) => (cell.hidden = !shown.has(i)));
+    const next = buildLightbox();
+    lightbox.element.replaceWith(next.element);
+    lightbox = next;
+  };
 
-  const setColumns = (n, save) => {
-    columns = n;
-    if (save) saveColumns(n);
-    grid.style.setProperty('--cols', n);
-    control.set(n);
-    thumbs.forEach(({pic}) => pic.setAttribute('sizes', thumbSizes(n, phoneColumns)));
+  const filter = gallery.filter
+    ? createGalleryFilter({
+        images,
+        facets: gallery.facets ?? GALLERY_FACETS,
+        counts: gallery.counts,
+        rowLines: gallery.rowLines,
+        start: readPicks(key),
+        onChange: (indexes, picks) => {
+          savePicks(key, picks);
+          showOnly(indexes, picks.length > 0);
+        },
+      })
+    : null;
+
+  const grid = el('ul', {class: 'gallery-grid'}, thumbs.map(({cell}) => cell));
+  const controls = Object.fromEntries(
+    ['wide', 'phone'].map((size) => [
+      size,
+      createColumnControl({size, choices: choices[size], look: columnControl, onPick: (n) => setColumns(size, n, true)}),
+    ]),
+  );
+  const CSS_VAR = {wide: '--cols', phone: '--phone-cols'};
+
+  const setColumns = (size, n, save) => {
+    columns[size] = n;
+    if (save) saveColumns(STORE_KEYS[size], n);
+    grid.style.setProperty(CSS_VAR[size], n);
+    controls[size].set(n);
+    thumbs.forEach(({pics}) => pics.forEach((pic) => pic.setAttribute('sizes', thumbSizes(columns.wide, columns.phone))));
   };
 
   const classes = [
@@ -278,17 +447,23 @@ export const createGallery = ({title, gallery}) => {
     `gallery--ticks-${tickShape}`,
     !barFill && 'gallery--no-fill',
     !ticks && 'gallery--no-ticks',
+    filter && `gallery--mark-${filteredMark}`,
   ].filter(Boolean);
   const element = el(
     'div',
     {
       class: classes.join(' '),
-      style: `--phone-cols: ${phoneColumns}; --thumb-aspect: ${aspect}; --tick: ${tickSize}px`,
+      style: `--thumb-aspect: ${aspect}; --tick: ${tickSize}px`,
     },
-    control.element,
+    filter?.element,
+    el('div', {class: 'gallery-toolbar'}, lead ?? filter?.status, controls.wide.element, controls.phone.element),
     grid,
     lightbox.element,
   );
-  setColumns(columns, false);
+  setColumns('wide', columns.wide, false);
+  setColumns('phone', columns.phone, false);
+  // Picks kept on this history entry (Back, reload): match them before
+  // the page is shown, so scroll memory measures the filtered height
+  if (filter?.startFiltered) showOnly(filter.startVisible, true);
   return element;
 };

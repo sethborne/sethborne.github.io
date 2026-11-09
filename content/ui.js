@@ -73,6 +73,15 @@ export default {
   gallery: {
     columns: 'Columns',
     fullSize: 'View Full Size',
+    // Compare images: the tag on a thumb, and the two layers' default
+    // names (a gallery's compareLabels overrides them)
+    compare: 'Compare',
+    compareLabels: ['Before', 'After'],
+    // Gallery filter (components/gallery/filter.js): a folded row's
+    // button, and the status line beside Columns
+    more: (n) => `+${n} More`,
+    less: 'Less',
+    filterStatus: (shown, total, filtered) => (filtered ? `Showing ${shown} of ${total} images` : `All ${total} images`),
     // Read out as the lightbox moves (the bar or dots show it on screen)
     position: (i, count) => `Image ${i} of ${count}`,
   },

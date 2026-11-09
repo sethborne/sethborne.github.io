@@ -66,9 +66,11 @@ const layoutOf = (node) => {
 // One piece of a page, from content-style fields: an image gallery, a 3D
 // turntable, a live URL, a link out, or a screenshot. Nothing to show
 // gives null (no frame).
-const renderPiece = (title, fields = {}) => {
+// key names the piece's place on the page (a section id, or 'content'),
+// so a gallery can keep its filter picks on the history entry.
+const renderPiece = (title, fields = {}, key = 'content') => {
   const {gallery, turntable, embed, link, fallback} = fields;
-  if (gallery) return createGallery({title, gallery});
+  if (gallery) return createGallery({title, gallery, key});
   if (turntable) return createTurntable({title, ...fields});
   return (embed || link || fallback) ? createEmbed({title, ...fields}) : null;
 };
@@ -80,7 +82,7 @@ const renderSection = ({title, text, ...fields}) =>
     {class: 'page-section'},
     el('h2', {}, title),
     text && el('p', {class: 'page-section-text'}, text),
-    renderPiece(title, fields),
+    renderPiece(title, fields, fields.id),
   );
 
 const renderNotFound = (path) => {
