@@ -51,7 +51,6 @@ export default fromCopy(copy).detailPage(
           // Grid order = lightbox order = the doc's Gallery lines. `focus`
           // frames an image's 3:2 crop in the grid (CSS object-position);
           // the lightbox shows the whole image.
-          // TEMP: the USE_ tags are placeholder guesses; Seth corrects them
           images: [
             {name: 'bgi_aerial_ne', tags: [MEDIA_RENDERING, MEDIA_PHOTOSIM, VIEW_AERIAL, USE_BUSINESS, USE_RESIDENTIAL, USE_WATERFRONT, USE_MIXED_USE]},
             {name: 'bgi_aerial_nw', tags: [MEDIA_RENDERING, MEDIA_PHOTOSIM, VIEW_AERIAL, USE_BUSINESS, USE_RESIDENTIAL, USE_WATERFRONT, USE_MIXED_USE]},
