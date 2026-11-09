@@ -9,6 +9,10 @@ content/helpers.js). The doc is the source of truth: never hand-edit copy.js.
     python tools/copy_sync.py [project] --write    # regenerate copy.js files from the docs
     python tools/copy_sync.py [project] --export   # build missing docs from the site (--force: all)
 
+Add --log to --check or --write to also keep a Markdown record of the run
+(diffs + warnings) in <project folder>/_logs/YYYYMMDD_HHMMSS_copy_sync.md,
+one file per project per run (gitignored).
+
 [project] is a project id (textile-resale-economy); leave it out for every
 project. Each command covers the project's page folders at every depth.
 
@@ -18,7 +22,8 @@ Doc layout (the guide at the top of every exported doc repeats this):
   is one item.
 - Sections nests, like the page's `sections` in index.js: a Heading 3 per
   section (its heading), then one paragraph of intro (optional), then a
-  Heading 4 per piece with copy (Gallery: one "Title: caption" per image).
+  Heading 4 per piece with copy (Gallery: one "Title: caption" per image;
+  a compare pair may add " | Before | After", its own two labels).
   Bullets, numbers and indents are formatting only; parsing reads the
   heading levels and the text.
 - Comments and tracked deletions are ignored; tracked insertions count.
@@ -29,6 +34,7 @@ content tree for --export and the page check.
 
 import argparse
 import difflib
+from datetime import datetime
 import json
 import re
 import subprocess
@@ -38,6 +44,8 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 from xml.sax.saxutils import escape
 
+from term import diff_line, dim, fail, heading, ok, paired, path, warn
+
 ROOT = Path(__file__).resolve().parent.parent
 PROJECTS = ROOT / 'content' / 'projects'
 
@@ -46,8 +54,9 @@ PROJECTS = ROOT / 'content' / 'projects'
 #   list:   always an array
 #   action: array of {lead, text}, split at the first ': '
 #   links:  array of {label, href}, from Word hyperlinks
-#   titled: array of {title, text?}: "Title" or "Title: text". Gallery: a
-#           title + caption per image, in the order index.js lists them
+#   titled: array of {title, text?, labels?}: "Title" or "Title: text". Gallery: a
+#           title + caption per image, in the order index.js lists them; a
+#           compare pair may end in " | Before | After" (its own two labels)
 #   sections: array of {title, text?, <piece copy>}, nested (see below)
 FIELDS = [
     ('Title', 'title', 'text'),
@@ -221,8 +230,16 @@ def to_value(kind, items, where):
     if kind == 'titled':
         out = []
         for text, _ in items:
-            title, sep, rest = text.partition(': ')
-            out.append({'title': title, 'text': rest} if sep else {'title': title})
+            # " | A | B" at the end: a compare pair's own layer names
+            main, *labels = text.split(' | ')
+            labels = [label.strip() for label in labels]
+            if labels and (len(labels) != 2 or not all(labels)):
+                raise CopyError(f'{where}: a compare pair takes exactly two labels, "Title: caption | Before | After": {text!r}')
+            title, sep, rest = main.partition(': ')
+            item = {'title': title, 'text': rest} if sep else {'title': title}
+            if labels:
+                item['labels'] = labels
+            out.append(item)
         return out
     if kind == 'links':
         out = []
@@ -390,7 +407,9 @@ const walk = (node, path) => {
   if (Object.keys(content).length) copy.content = content;
   // A gallery's copy: each image's title and caption
   const captionsOf = (gallery) =>
-    (gallery?.images ?? []).filter((image) => image.title).map(({title, text}) => (text ? {title, text} : {title}));
+    (gallery?.images ?? []).filter((image) => image.title).map(({title, text, labels}) => ({title, ...(text && {text}), ...(labels && {labels})}));
+  // Which images are compare pairs, by position (for --check only)
+  const comparesOf = (gallery) => (gallery?.images ?? []).map((image) => Boolean(image.compare));
   // Sections: only their copy (heading, intro, piece copy); the pieces stay in index.js
   const sections = (node.sections ?? []).filter((s) => s.title).map(({title, text, gallery}) => {
     const captions = captionsOf(gallery);
@@ -400,7 +419,11 @@ const walk = (node, path) => {
   // The page's own gallery (content.gallery)
   const captions = captionsOf(node.content?.gallery);
   if (captions.length) copy.gallery = captions;
-  pages.push({path, copy});
+  const compares = {
+    gallery: comparesOf(node.content?.gallery),
+    sections: (node.sections ?? []).filter((s) => s.title).map((s) => comparesOf(s.gallery)),
+  };
+  pages.push({path, copy, compares});
   for (const child of node.children ?? []) walk(child, [...path, child.id]);
 };
 walk(root, [root.id]);
@@ -420,13 +443,33 @@ def site_pages(project):
     return json.loads(result.stdout)
 
 
-def check_tree(project, folders):
+def check_tree(pages, folders):
     """Folders and the tree must agree: same paths, ids = folder names."""
-    site = {' / '.join(p['path']) for p in site_pages(project)}
+    site = {' / '.join(p['path']) for p in pages}
     disk = {label(f) for f in folders}
     warnings = [f'{p}: page in the tree but no folder for it (or its id doesn’t match the folder name)'
                 for p in sorted(site - disk)]
     warnings += [f'{p}: folder has an index.js but no parent imports it' for p in sorted(disk - site)]
+    return warnings
+
+
+def check_labels(pages, docs):
+    """Labels on a doc line ("| Before | After") only for compare pairs."""
+    warnings = []
+    for page in pages:
+        where = ' / '.join(page['path'])
+        fields = docs.get(where)
+        if not fields:
+            continue
+        compares = page['compares']
+        galleries = [('gallery', fields.get('gallery', []), compares['gallery'])]
+        for k, section in enumerate(fields.get('sections', [])):
+            flags = compares['sections'][k] if k < len(compares['sections']) else []
+            galleries.append((f'sections / {section["title"]} / gallery', section.get('gallery', []), flags))
+        for at, items, flags in galleries:
+            for i, item in enumerate(items):
+                if item.get('labels') and not (i < len(flags) and flags[i]):
+                    warnings.append(f'{where} / {at}: line {i + 1} has labels, but image {i + 1} in index.js has no `compare`: {item["title"]}')
     return warnings
 
 
@@ -461,9 +504,10 @@ def lint(where, fields):
             if kind == 'titled':
                 titled += [(f'sections / {section["title"]} / {key}', item) for item in section.get(key, [])]
     for at, item in titled:
-        lower = not_title_case(item['title'])
-        if lower:
-            warnings.append(f'{where} / {at}: not Title Case ({", ".join(lower)}): {item["title"]}')
+        for text in [item['title'], *item.get('labels', [])]:
+            lower = not_title_case(text)
+            if lower:
+                warnings.append(f'{where} / {at}: not Title Case ({", ".join(lower)}): {text}')
     return warnings
 
 
@@ -491,10 +535,12 @@ def para(content, style=None, num=None):
 
 
 def titled_para(item, style, num=None):
-    """"Title: text" with the title in bold."""
+    """"Title: text" with the title in bold, then " | A | B" for a pair's labels."""
     text = item.get('text')
     title = run(curly(item['title']) + (':' if text else ''), bold=True)
-    return para(title + (run(' ' + curly(text)) if text else ''), style, num)
+    labels = ''.join(f' | {curly(label)}' for label in item.get('labels', []))
+    rest = (' ' + curly(text) if text else '') + labels
+    return para(title + (run(rest) if rest else ''), style, num)
 
 
 def doc_body(folder, flat, add_link, new_list):
@@ -509,7 +555,7 @@ def doc_body(folder, flat, add_link, new_list):
         'Action items are "Lead: text". Links are hyperlinks: the text is the button label.',
         'Sections: a Heading 3 per section (its heading), in page order; under it one paragraph of intro (optional), '
         'then a Heading 4 per piece with copy: Gallery.',
-        'Gallery items are "Title" or "Title: caption", one per image, in gallery order (the numbers match the images list).',
+        'Gallery items are "Title" or "Title: caption", one per image, in gallery order (the numbers match the images list). A compare pair can end in " | After | Changes" to rename its two layers.',
         'Comments are ignored, so use them for notes. Tracked changes are fine: insertions count, deletions don’t.',
     ]
     out = [para(run(label(folder)), 'Title')]
@@ -653,7 +699,7 @@ def export(project, folders, force):
     for folder in folders:
         if not (folder / 'copy.js').exists():
             (folder / 'copy.js').write_text(STUB_JS, encoding='utf-8', newline='\n')
-            print(f'Wrote a placeholder {(folder / "copy.js").relative_to(ROOT)}')
+            print(ok('Wrote a placeholder'), path((folder / 'copy.js').relative_to(ROOT)))
     by_label = {label(f): f for f in folders}
     for page in site_pages(project):
         folder = by_label.get(' / '.join(page['path']))
@@ -667,12 +713,12 @@ def export(project, folders, force):
             write_docx(doc, folder, flat)
         except PermissionError:
             raise CopyError(f'Can’t write {doc.name}: close it in Word first.')
-        print(f'Wrote {doc.relative_to(ROOT)}')
+        print(ok('Wrote'), path(doc.relative_to(ROOT)))
 
 
 def sync(folders, write):
     """Parse every doc first; write only if all of them parse."""
-    results, errors, warnings = [], [], []
+    results, errors, warnings, docs = [], [], [], {}
     for folder in folders:
         doc, js = folder / f'{folder.name}.docx', folder / 'copy.js'
         if not doc.exists():
@@ -684,6 +730,7 @@ def sync(folders, write):
             errors.append(str(e))
             continue
         warnings += lint(label(folder), fields)
+        docs[label(folder)] = fields
         new = render_js(folder, fields)
         old = js.read_text(encoding='utf-8') if js.exists() else ''
         diff = list(difflib.unified_diff(
@@ -698,11 +745,37 @@ def sync(folders, write):
         if write:
             js.write_text(new, encoding='utf-8', newline='\n')
             lines = sum(1 for line in diff if line.startswith('+') and not line.startswith('+++'))
-            print(f'Wrote {js.relative_to(ROOT)} ({lines} changed lines)')
+            print(ok('Wrote'), path(js.relative_to(ROOT)), dim(f'({lines} changed lines)'))
         else:
-            print(f'\n== {label(folder)}')
-            print('\n'.join(diff[2:]))
-    return warnings, len(changed)
+            print(f'\n{heading(label(folder))}')
+            print('\n'.join(diff_line(line) for line in paired(diff[2:])))
+    # (page label, diff lines) for the log
+    return warnings, [(label(folder), paired(diff[2:])) for folder, _, _, diff in changed], docs
+
+
+def write_log(project, mode, changed, warnings):
+    """A Markdown record of one run for one project, in its _logs/ folder
+    (gitignored): YYYYMMDD_HHMMSS_copy_sync.md, local time, 24-hour, so
+    the folder lists runs in order and no run replaces another."""
+    now = datetime.now()
+    verb = 'Wrote' if mode == 'write' else 'Would change'
+    lines = [
+        f'# Copy Sync, {now:%Y-%m-%d %H:%M:%S}',
+        '',
+        f'- Project: `{project.relative_to(ROOT).as_posix()}`',
+        f'- Mode: --{mode}',
+        f'- {verb}: {len(changed)} page(s)' + ''.join(f'\n  - `{page}`' for page, _ in changed),
+        f'- Warnings: {len(warnings)}',
+    ]
+    for page, diff in changed:
+        lines += ['', f'## {page}', '', '```diff', *diff, '```']
+    if warnings:
+        lines += ['', '## Warnings', '', *(f'- {line}' for line in warnings)]
+    folder = project / '_logs'
+    folder.mkdir(exist_ok=True)
+    file = folder / f'{now:%Y%m%d_%H%M%S}_copy_sync.md'
+    file.write_text('\n'.join(lines) + '\n', encoding='utf-8', newline='\n')
+    return file
 
 
 def main():
@@ -716,34 +789,45 @@ def main():
     mode.add_argument('--write', action='store_true', help='regenerate copy.js files from the docs')
     mode.add_argument('--export', action='store_true', help='build missing docs from the site')
     parser.add_argument('--force', action='store_true', help='with --export: rebuild every doc, replacing edits')
+    parser.add_argument('--log', action='store_true', help='with --check or --write: also write <project>/_logs/YYYYMMDD_HHMMSS_copy_sync.md')
     args = parser.parse_args()
+    if args.log and args.export:
+        parser.error('--log goes with --check or --write')
 
     try:
-        warnings, changed = [], 0
+        warnings, changed, logs = [], 0, []
         for project in find_projects(args.project):
             folders = page_folders(project)
+            docs, project_warnings, project_changed = {}, [], []
             if args.export:
                 export(project, folders, args.force)
             else:
-                page_warnings, page_changes = sync(folders, args.write)
-                warnings += page_warnings
-                changed += page_changes
+                project_warnings, project_changed, docs = sync(folders, args.write)
+                changed += len(project_changed)
             try:
-                warnings += check_tree(project, folders)
+                pages = site_pages(project)
+                project_warnings += check_tree(pages, folders)
+                project_warnings += check_labels(pages, docs)
             except CopyError as e:
-                warnings.append(f'Tree check skipped: {e}')
+                project_warnings.append(f'Tree check skipped: {e}')
+            warnings += project_warnings
+            if args.log:
+                mode = 'write' if args.write else 'check'
+                logs.append(write_log(project, mode, project_changed, project_warnings))
         if not args.export:
             if not changed:
-                print('Every copy.js already matches its doc.')
+                print(ok('Every copy.js already matches its doc.'))
             elif args.write:
-                print('Review with: git diff')
+                print(dim('Review with: git diff'))
             else:
-                print(f'\n{changed} page(s) would change. Run --write to apply.')
+                print(f'\n{warn(f"{changed} page(s) would change.")} {dim("Run --write to apply.")}')
         if warnings:
-            print(f'\n{len(warnings)} warning(s):')
-            print('\n'.join(f'  {line}' for line in warnings))
+            print(f'\n{warn(f"{len(warnings)} warning(s):")}')
+            print('\n'.join(warn(f'  {line}') for line in warnings))
+        for file in logs:
+            print(ok('Log:'), path(file.relative_to(ROOT)))
     except CopyError as e:
-        sys.exit(f'Problems found, nothing written:\n{e}')
+        fail('Problems Found, Nothing Written', str(e))
 
 
 if __name__ == '__main__':

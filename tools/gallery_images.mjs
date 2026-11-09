@@ -16,32 +16,49 @@
 //                       in GALLERY_DEFAULTS, content/helpers.js)
 //   --quality 78        JPG quality of the sized files
 //   --full-quality 85   JPG quality of _full
+//
+// Check instead of resize (tools/gallery_check.mjs; writes no images):
+//   --check             were the images made right? raw vs outputs, per size
+//   --check --used      also: are they used right? (the page's index.js galleries)
+//   --log               with --check: also write img/_raw/gallery/_logs/YYYYMMDD_HHMMSS_gallery_check.md
 
 import {existsSync} from 'node:fs';
 import {join, parse} from 'node:path';
 import {eachLimited, filesIn, readArgs, saveResized, widthOf} from './image_resize.mjs';
+import {runCheck} from './gallery_check.mjs';
+import {dim, fail, heading, ok, path, warn} from './term.mjs';
 
-const USAGE = 'Usage: npm run gallery -- <page folder> [--widths 800,1280,1600,2560] [--quality 78] [--full-quality 85]';
-const {page, widths, quality, 'full-quality': fullQuality} = readArgs(USAGE, {
+const USAGE = 'Usage: npm run gallery -- <page folder> [--widths 800,1280,1600,2560] [--quality 78] [--full-quality 85] [--check [--used] [--log]]';
+const {page, widths, quality, 'full-quality': fullQuality, check, used, log} = readArgs(USAGE, {
   widths: [800, 1280, 1600, 2560],
   quality: 78,
   'full-quality': 85,
+  check: false,
+  used: false,
+  log: false,
 });
+
+if ((used || log) && !check) fail('--used and --log Go With --check', USAGE);
+if (check) {
+  await runCheck({page, widths, used, log});
+  process.exit();
+}
 
 const src = join(page, 'img', '_raw', 'gallery');
 const out = join(page, 'img', 'gallery');
-if (!existsSync(src)) throw new Error(`No raw images at ${src}`);
+if (!existsSync(src)) fail('No Raw Images', path(src, process.stderr));
 const files = await filesIn(src, /\.jpe?g$/i);
-if (!files.length) throw new Error(`No .jpg files in ${src}`);
+if (!files.length) fail('No JPG Files', path(src, process.stderr));
+console.log(heading('Gallery'), path(page));
 
 await eachLimited(files, 4, async (file) => {
   const input = join(src, file);
   const {name} = parse(file);
-  if (!/^[a-z0-9_]+$/.test(name)) console.warn(`WARNING: ${name}: use lowercase and underscores only`);
+  if (!/^[a-z0-9_]+$/.test(name)) console.warn(warn(`Warning: ${name}: use lowercase and underscores only`, process.stderr));
   await Promise.all([
     ...widths.map((width) => saveResized({input, output: join(out, `${name}_${width}.jpg`), width, quality})),
     saveResized({input, output: join(out, `${name}_full.jpg`), quality: fullQuality}),
   ]);
-  console.log(`${name} (${await widthOf(input)} px wide)`);
+  console.log(ok(name), dim(`(${await widthOf(input)} px wide)`));
 });
-console.log(`${files.length} images -> ${out}`);
+console.log(ok(`${files.length} images ->`), path(out));

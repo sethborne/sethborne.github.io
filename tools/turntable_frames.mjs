@@ -23,6 +23,7 @@
 import {existsSync} from 'node:fs';
 import {join} from 'node:path';
 import {eachLimited, filesIn, foldersIn, readArgs, saveResized} from './image_resize.mjs';
+import {dim, fail, heading, ok, path} from './term.mjs';
 
 const USAGE = 'Usage: npm run turntable -- <page folder> [--source <folder>] [--widths 640,1024] [--color-width 512] [--quality 78]';
 const {page, source, widths, quality, 'color-width': colorWidth} = readArgs(USAGE, {
@@ -34,9 +35,10 @@ const {page, source, widths, quality, 'color-width': colorWidth} = readArgs(USAG
 
 const src = source || join(page, 'img', '_raw', 'turntable');
 const out = join(page, 'img', 'turntable');
-if (!existsSync(src)) throw new Error(`No raw frames at ${src}`);
+if (!existsSync(src)) fail('No Raw Frames', path(src, process.stderr));
 const phases = await foldersIn(src, /^phase_/);
-if (!phases.length) throw new Error(`No phase_* folders in ${src}`);
+if (!phases.length) fail('No phase_* Folders', path(src, process.stderr));
+console.log(heading('Turntable'), path(page));
 
 const basesOf = (phase) => filesIn(join(src, phase), new RegExp(`^${phase}_base_.*\\.jpg$`, 'i'));
 
@@ -53,7 +55,7 @@ for (const phase of phases) {
       existsSync(color) && saveResized({input: color, output: join(dir, `color_${n}.png`), width: colorWidth, smooth: false}),
     ]);
   });
-  console.log(`${phase}: ${bases.length} frames`);
+  console.log(ok(phase), dim(`${bases.length} frames`));
 }
 
 // Card thumb: the full build-out from the first angle
@@ -61,4 +63,4 @@ const last = phases.at(-1);
 const [first] = await basesOf(last);
 await Promise.all([800, 1280].map((width) =>
   saveResized({input: join(src, last, first), output: join(page, 'img', `thumb_${width}.jpg`), width, quality})));
-console.log('thumb: img/thumb_800.jpg, thumb_1280.jpg');
+console.log(ok('thumb'), path('img/thumb_800.jpg, thumb_1280.jpg'));

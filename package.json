@@ -1,6 +1,7 @@
 {
   "name": "sethborne-github-io",
   "private": true,
+  "type": "module",
   "description": "Tools for the portfolio site (image resizing). The site itself has no dependencies.",
   "scripts": {
     "gallery": "node tools/gallery_images.mjs",
