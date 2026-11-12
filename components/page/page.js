@@ -10,6 +10,7 @@ import {createCardGrid, labelFor} from '../card/card.js';
 import {createEmbed} from '../embed/embed.js';
 import {createGallery} from '../gallery/gallery.js';
 import {createTurntable} from '../turntable/turntable.js';
+import {createVideo} from '../video/video.js';
 import {createWriteup} from '../writeup/writeup.js';
 import ui from '../../content/ui.js';
 import {PAGE_DEFAULTS} from '../../content/helpers.js';
@@ -65,14 +66,15 @@ const layoutOf = (node) => {
 };
 
 // One piece of a page, from content-style fields: an image gallery, a 3D
-// turntable, a live URL, a link out, or a screenshot. Nothing to show
+// turntable, a video, a live URL, a link out, or a screenshot. Nothing to show
 // gives null (no frame).
 // key names the piece's place on the page (a section id, or 'content'),
 // so a gallery can keep its filter picks on the history entry.
 const renderPiece = (title, fields = {}, key = 'content') => {
-  const {gallery, turntable, embed, link, fallback} = fields;
+  const {gallery, turntable, video, embed, link, fallback} = fields;
   if (gallery) return createGallery({title, gallery, key});
   if (turntable) return createTurntable({title, ...fields});
+  if (video) return createVideo({title, video});
   return (embed || link || fallback) ? createEmbed({title, ...fields}) : null;
 };
 

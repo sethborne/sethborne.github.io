@@ -279,6 +279,18 @@ export const turntable = (here, {phases, heading, alt, ...more}) => ({
 //                  0 never folds
 //   filteredMark   while any chip is picked: 'line' (the line under each
 //                  thumb's image turns orange) or 'off'
+//   videoGrid      video items in the grid: 'poster' (poster + badge, plays
+//                  in the lightbox), 'hover' (a loop plays while the mouse
+//                  is over its card) or 'always' (loops play, muted, while
+//                  on screen); never under reduced motion
+//   videoBadge     on a video thumb: 'circle' (a play button in the
+//                  middle), 'pill' ("Loop" / "Video" in the corner) or 'both'
+//   videoWidth     the MP4s' width on disk (tools/video.mjs)
+//   posterWidths   the posters' widths on disk
+// Video item: {name, video: 'loop'} (a living rendering: muted, looping,
+// with a Pause button) or {name, video: 'movie'} (sound and the browser's
+// controls). Files in img/video/, from npm run video:
+//   img/video/<name>_1280.mp4, <name>_poster_800.jpg, <name>_poster_1280.jpg
 // Compare image (before/after slider): {name, compare: '<bottom image>'}.
 //   `name` is the top image (after), `compare` the bottom one (before;
 //   left of the line for x, below it for y);
@@ -308,11 +320,36 @@ const GALLERY_DEFAULTS = {
   counts: 'bar',
   rowLines: 2,
   filteredMark: 'line',
+  videoGrid: 'poster',
+  videoBadge: 'circle',
+  videoWidth: 1280,
+  posterWidths: [800, 1280],
 };
 export const gallery = (here, {images, ...more}) => ({
   ...GALLERY_DEFAULTS,
   base: new URL('img/gallery/', here).href,
+  videoBase: new URL('img/video/', here).href,
   images: images.map((image) => (typeof image === 'string' ? {name: image} : image)),
+  ...more,
+});
+
+// A video on the page itself (a section's or content's `video`): the
+// poster with a play button; a click swaps in the video, playing with
+// sound and the browser's controls. For a movie that stands alone (an
+// animation); short loops go in a gallery as video items instead.
+// Files in img/video/ from npm run video (see gallery's video items):
+//   video: video(import.meta.url, {name: 'westbrook_animation'})
+// Settings: aspect (the frame's shape, a CSS aspect-ratio), width (the
+// MP4's width on disk), posterWidths.
+const VIDEO_DEFAULTS = {
+  aspect: '16 / 9',
+  width: 1280,
+  posterWidths: [800, 1280],
+};
+export const video = (here, {name, ...more}) => ({
+  ...VIDEO_DEFAULTS,
+  base: new URL('img/video/', here).href,
+  name,
   ...more,
 });
 

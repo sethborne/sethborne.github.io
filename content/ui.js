@@ -76,6 +76,14 @@ export default {
   },
   about: {photoComing: 'Photo Coming'},
   // Image gallery (components/gallery/): column control, lightbox
+  // Video in a gallery or on the page: the lightbox's pause button, the
+  // thumb badge words (videoBadge 'pill' or 'both')
+  video: {
+    pause: 'Pause',
+    resume: 'Play',
+    loop: 'Loop',
+    movie: 'Video',
+  },
   gallery: {
     columns: 'Columns',
     fullSize: 'View Full Size',
