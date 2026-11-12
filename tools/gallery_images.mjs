@@ -23,8 +23,8 @@
 //   --log               with --check: also write img/_raw/gallery/_logs/YYYYMMDD_HHMMSS_gallery_check.md
 
 import {existsSync} from 'node:fs';
-import {join, parse} from 'node:path';
-import {eachLimited, filesIn, readArgs, saveResized, widthOf} from './image_resize.mjs';
+import {join} from 'node:path';
+import {eachLimited, filesIn, readArgs, saveResized, siteName, widthOf} from './image_resize.mjs';
 import {runCheck} from './gallery_check.mjs';
 import {dim, fail, heading, ok, path, warn} from './term.mjs';
 
@@ -53,7 +53,7 @@ console.log(heading('Gallery'), path(page));
 
 await eachLimited(files, 4, async (file) => {
   const input = join(src, file);
-  const {name} = parse(file);
+  const name = siteName(file);
   if (!/^[a-z0-9_]+$/.test(name)) console.warn(warn(`Warning: ${name}: use lowercase and underscores only`, process.stderr));
   await Promise.all([
     ...widths.map((width) => saveResized({input, output: join(out, `${name}_${width}.jpg`), width, quality})),
