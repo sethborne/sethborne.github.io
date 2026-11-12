@@ -12,10 +12,10 @@
 
 import {existsSync} from 'node:fs';
 import {mkdir, stat, writeFile} from 'node:fs/promises';
-import {join, parse, resolve} from 'node:path';
+import {join, resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {stripVTControlCharacters} from 'node:util';
-import {filesIn, sizeOf} from './image_resize.mjs';
+import {filesIn, siteName, sizeOf} from './image_resize.mjs';
 import {bad, dim, fail, heading, ok, path, warn} from './term.mjs';
 
 const NAME_RULE = /^[a-z0-9_]+$/;
@@ -32,7 +32,7 @@ const fileInfo = async (file) => ({...(await sizeOf(file)), mtime: (await stat(f
 const readRaws = async (dir) => {
   if (!existsSync(dir)) return {};
   const files = await filesIn(dir, /\.jpe?g$/i);
-  return Object.fromEntries(await Promise.all(files.map(async (file) => [parse(file).name, await fileInfo(join(dir, file))])));
+  return Object.fromEntries(await Promise.all(files.map(async (file) => [siteName(file), await fileInfo(join(dir, file))])));
 };
 
 // {name: {800: info, ..., full: info}} for every output file
@@ -59,7 +59,7 @@ const readUsage = async (page) => {
   );
   if (!galleries.length) return null;
   return {
-    names: new Set(galleries.flatMap(({images}) => images.flatMap(({name, compare}) => [name, compare].filter(Boolean)))),
+    names: new Set(galleries.flatMap(({images}) => images.filter(({video}) => !video).flatMap(({name, compare}) => [name, compare].filter(Boolean)))),
     widths: [...new Set(galleries.flatMap(({widths}) => widths))].sort((a, b) => a - b),
   };
 };

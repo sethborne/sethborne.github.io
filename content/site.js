@@ -5,5 +5,6 @@ import {groupPage} from './helpers.js';
 import textileResaleEconomy from './projects/gis/textile-resale-economy/index.js';
 import textileContacts from './projects/gis/textile-contacts/index.js';
 import bgiSeaportSquare from './projects/vis/bgi-seaport-square/index.js';
+import hinesWestbrookStation from './projects/vis/hines-westbrook-station/index.js';
 
-export default groupPage('index', 'Seth Borne', [textileResaleEconomy, textileContacts, bgiSeaportSquare]);
+export default groupPage('index', 'Seth Borne', [textileResaleEconomy, textileContacts, bgiSeaportSquare, hinesWestbrookStation]);

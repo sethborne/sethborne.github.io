@@ -12,6 +12,10 @@ import {GALLERY_FACETS} from '../../content/gallery-tags.js';
 import {createCompare} from './compare.js';
 import {createGalleryFilter} from './filter.js';
 
+// Video items (gallery() in content/helpers.js): a poster in the grid,
+// a <video> in the lightbox. Nothing moves by itself under reduced motion.
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)');
+
 // The column choice lasts for the tab's session and is shared by every
 // gallery (like scroll memory): a new tab starts from the default
 // Phones keep their own choice: 2 columns there isn't 2 on a desktop
@@ -23,6 +27,19 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 
 const filesOf = ({base, widths}, {name}) => ({base: `${base}${name}`, widths});
 const fullOf = ({base}, {name}) => `${base}${name}_full.jpg`;
+// A video item's files: the MP4 and its poster (img/video/, npm run video)
+const videoFileOf = ({videoBase, videoWidth}, {name}) => `${videoBase}${name}_${videoWidth}.mp4`;
+const posterOf = ({videoBase, posterWidths}, {name}) => ({base: `${videoBase}${name}_poster`, widths: posterWidths});
+// What a thumb or the lightbox shows for an item: its poster or its image
+const picOf = (gallery, image) => (image.video ? posterOf(gallery, image) : filesOf(gallery, image));
+// A muted, looping, inline video: all three are needed for a video to
+// start by itself (phones also go fullscreen without playsinline). The
+// property, not just the attribute, is what browsers check for muted.
+const loopVideo = (src, poster) => {
+  const video = el('video', {class: 'gallery-video', src, poster, muted: true, loop: true, playsinline: true, preload: 'none'});
+  video.muted = true;
+  return video;
+};
 // No title in the doc yet: the file name stands in ('plaza_dusk' -> 'plaza dusk')
 const titleOf = ({title, name}) => title ?? name.replaceAll('_', ' ');
 // Alt text: the title, plus the caption when there is one
@@ -158,7 +175,8 @@ const createLightbox = ({title, gallery, onClose}) => {
   const fullBefore = fullLink('');
   const fullAfter = fullLink('');
   const fullPair = el('span', {class: 'gallery-lb-full-pair', hidden: true}, fullBefore, fullAfter);
-  const stage = el('div', {class: 'gallery-lb-stage'}, img);
+  const player = el('div', {class: 'gallery-lb-video', hidden: true});
+  const stage = el('div', {class: 'gallery-lb-stage'}, img, player);
   let compare = null;
   const button = (cls, label, glyph) =>
     el('button', {type: 'button', class: `gallery-lb-btn ${cls}`, 'aria-label': label}, el('span', {'aria-hidden': 'true'}, glyph));
@@ -200,7 +218,7 @@ const createLightbox = ({title, gallery, onClose}) => {
   const preload = (i) => {
     const image = images[(i + count) % count];
     for (const one of image.compare ? [image, pairOf(image)] : [image]) {
-      Object.assign(new Image(), {sizes: '100vw', srcset: srcsetFor(filesOf(gallery, one))});
+      Object.assign(new Image(), {sizes: '100vw', srcset: srcsetFor(picOf(gallery, one))});
     }
   };
 
@@ -233,11 +251,44 @@ const createLightbox = ({title, gallery, onClose}) => {
     }
   };
 
+  // A video item swaps the <img> for a <video>. A loop plays muted with a
+  // Pause button (motion over 5 seconds needs a way to stop it); a movie
+  // gets sound and the browser's controls. Both start at once (the click
+  // that opened them counts as the go-ahead), except a loop under
+  // reduced motion, which waits for Play.
+  const showVideo = (image) => {
+    player.replaceChildren();
+    player.hidden = !image.video;
+    if (!image.video) return;
+    img.hidden = true;
+    full.hidden = true;
+    const src = videoFileOf(gallery, image);
+    const poster = fallbackFor(posterOf(gallery, image));
+    if (image.video === 'loop') {
+      const video = loopVideo(src, poster);
+      video.preload = 'auto';
+      video.setAttribute('aria-label', altOf(image));
+      const pause = el('button', {type: 'button', class: 'gallery-lb-pause'});
+      const label = () => (pause.textContent = video.paused ? `▶ ${ui.video.resume}` : `❚❚ ${ui.video.pause}`);
+      pause.addEventListener('click', () => (video.paused ? video.play() : video.pause()));
+      video.addEventListener('play', label);
+      video.addEventListener('pause', label);
+      player.append(video, pause);
+      label();
+      if (!REDUCED.matches) video.play().catch(() => {});
+    } else {
+      const video = el('video', {class: 'gallery-video', src, poster, controls: true, playsinline: true, preload: 'auto', 'aria-label': altOf(image)});
+      player.append(video);
+      video.play().catch(() => {});
+    }
+  };
+
   const show = (i) => {
     index = (i + count) % count;
     const image = images[index];
-    const files = filesOf(gallery, image);
+    const files = picOf(gallery, image);
     showCompare(image);
+    showVideo(image);
     img.srcset = srcsetFor(files);
     img.src = fallbackFor(files);
     img.alt = altOf(image);
@@ -260,9 +311,13 @@ const createLightbox = ({title, gallery, onClose}) => {
   close.addEventListener('click', () => dialog.close());
   dialog.addEventListener('close', () => {
     compare?.destroy();
+    // Removing the <video> stops it (and its sound)
+    player.replaceChildren();
     onClose(index);
   });
   dialog.addEventListener('keydown', (event) => {
+    // On a movie's controls the arrows seek, as the browser intends
+    if (event.target.tagName === 'VIDEO') return;
     if (event.key === 'ArrowRight') show(index + 1);
     else if (event.key === 'ArrowLeft') show(index - 1);
   });
@@ -325,7 +380,7 @@ const createLightbox = ({title, gallery, onClose}) => {
 // key: the gallery's place on its page (a section id, or 'content'), for
 // keeping filter picks on the history entry.
 export const createGallery = ({title, gallery, lead, key = 'content'}) => {
-  const {images, columnChoices, phoneColumnChoices, aspect, columnControl, thumbHover, position, barFill, ticks, tickShape, tickSize, compareThumb, compareBadge, filteredMark} = gallery;
+  const {images, columnChoices, phoneColumnChoices, aspect, columnControl, thumbHover, position, barFill, ticks, tickShape, tickSize, compareThumb, compareBadge, filteredMark, videoGrid, videoBadge} = gallery;
   const choices = {wide: columnChoices, phone: phoneColumnChoices};
   const columns = {
     wide: readColumns(STORE_KEYS.wide, choices.wide, gallery.columns),
@@ -333,7 +388,7 @@ export const createGallery = ({title, gallery, lead, key = 'content'}) => {
   };
 
   const thumbPic = (image, cls) => {
-    const files = filesOf(gallery, image);
+    const files = picOf(gallery, image);
     return el('img', {
       class: cls,
       src: fallbackFor(files),
@@ -349,7 +404,19 @@ export const createGallery = ({title, gallery, lead, key = 'content'}) => {
 
   // A compare thumb: 'badge' (the top image + a Compare tag) or 'split'
   // (both images, cut at a line in the middle)
+  // A video thumb: the poster, the play badge (videoBadge), and for a loop
+  // with videoGrid 'hover' or 'always', the loop itself over the poster
+  const videoThumbOf = (image) => {
+    const loop = image.video === 'loop' && videoGrid !== 'poster' ? loopVideo(videoFileOf(gallery, image), '') : null;
+    const badge = [
+      el('span', {class: 'gallery-play', 'aria-hidden': 'true'}),
+      el('span', {class: 'gallery-pill', 'aria-hidden': 'true'}, image.video === 'loop' ? ui.video.loop : ui.video.movie),
+    ];
+    return {pics: [thumbPic(image)], extra: [loop, badge], loop};
+  };
+
   const thumbOf = (image) => {
+    if (image.video) return videoThumbOf(image);
     if (!image.compare) return {pics: [thumbPic(image)]};
     if (compareThumb === 'split') {
       return {
@@ -367,19 +434,43 @@ export const createGallery = ({title, gallery, lead, key = 'content'}) => {
     return {pics: [thumbPic(image)], extra: badge};
   };
 
+  // Loops in the grid: 'hover' plays one while the mouse is over its card,
+  // 'always' plays each while it's on screen. The poster stays underneath,
+  // so the card looks the same before a loop has loaded.
+  const playLoop = (video) =>
+    !REDUCED.matches && video.play().then(() => video.classList.add('is-on')).catch(() => {});
+  const stopLoop = (video) => {
+    video.pause();
+    video.classList.remove('is-on');
+  };
+  const onScreen =
+    videoGrid === 'always' &&
+    new IntersectionObserver(
+      (entries) => entries.forEach(({target, isIntersecting}) => (isIntersecting ? playLoop(target) : stopLoop(target))),
+      {threshold: 0.4},
+    );
+  const watchLoop = (item, video) => {
+    if (onScreen) onScreen.observe(video);
+    if (videoGrid !== 'hover') return;
+    item.addEventListener('pointerenter', (event) => event.pointerType === 'mouse' && playLoop(video));
+    item.addEventListener('pointerleave', () => stopLoop(video));
+  };
+
   const thumbs = images.map((image, i) => {
-    const {pics, extra, cls} = thumbOf(image);
+    const {pics, extra, cls, loop} = thumbOf(image);
     const [before, after] = labelsOf(gallery, image);
     const label = image.compare ? `${altOf(image)}, ${before} and ${after}` : altOf(image);
+    const action = {loop: 'play muted loop', movie: 'play video with sound'}[image.video] ?? 'open larger';
     const item = el(
       'button',
-      {type: 'button', class: 'gallery-item', 'aria-label': `${label} (open larger)`},
+      {type: 'button', class: 'gallery-item', 'aria-label': `${label} (${action})`},
       el('span', {class: cls ? `gallery-thumb ${cls}` : 'gallery-thumb'}, pics, extra),
       el('span', {class: 'gallery-name', 'aria-hidden': 'true'}, titleOf(image)),
     );
     // The lightbox holds the visible images only, so a thumb opens at its
     // place among them
     item.addEventListener('click', () => lightbox.open(visible.indexOf(i)));
+    if (loop) watchLoop(item, loop);
     return {item, pics, cell: el('li', {}, item)};
   });
 
@@ -448,6 +539,7 @@ export const createGallery = ({title, gallery, lead, key = 'content'}) => {
     !barFill && 'gallery--no-fill',
     !ticks && 'gallery--no-ticks',
     filter && `gallery--mark-${filteredMark}`,
+    `gallery--badge-${videoBadge}`,
   ].filter(Boolean);
   const element = el(
     'div',

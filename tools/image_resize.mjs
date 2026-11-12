@@ -4,7 +4,7 @@
 // nothing from node_modules/ ships with the site.
 
 import {mkdir, readdir} from 'node:fs/promises';
-import {dirname} from 'node:path';
+import {basename, dirname, extname} from 'node:path';
 import {parseArgs} from 'node:util';
 import sharp from 'sharp';
 import {fail} from './term.mjs';
@@ -23,6 +23,12 @@ export const saveResized = async ({input, output, width, smooth = true, quality 
   });
   await (smooth ? image.jpeg({quality}) : image.png()).toFile(output);
 };
+
+// The name a raw file ships under: its name minus the extension and a
+// trailing _YYYYMMDD date, so raws keep their dates and the site's file
+// names stay clean (hines_westbrook_view_01_20150630.jpg ->
+// hines_westbrook_view_01). Shared by gallery_images and gallery_check.
+export const siteName = (file) => basename(file, extname(file)).replace(/_\d{8}$/, '');
 
 export const widthOf = async (path) => (await sharp(path).metadata()).width;
 
