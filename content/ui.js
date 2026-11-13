@@ -59,6 +59,10 @@ export default {
     childrenTitle: 'In This Project',
     // Under the tags of a page with two or more sections: links down to each
     jumpLabel: 'On This Page',
+    // The up button before each of those section headings (tooltip + screen readers)
+    backUp: 'Back to Top',
+    // Its visible word in the 'text' look (PAGE_DEFAULTS.backUp)
+    backUpText: 'Top',
     notFoundTitle: 'Page Not Found',
     notFoundText: (path) => `Nothing lives at #/${path}.`,
     notFoundBack: 'Back to Projects',
@@ -72,6 +76,14 @@ export default {
   },
   about: {photoComing: 'Photo Coming'},
   // Image gallery (components/gallery/): column control, lightbox
+  // Video in a gallery or on the page: the lightbox's pause button, the
+  // thumb badge words (videoBadge 'pill' or 'both')
+  video: {
+    pause: 'Pause',
+    resume: 'Play',
+    loop: 'Loop',
+    movie: 'Video',
+  },
   gallery: {
     columns: 'Columns',
     fullSize: 'View Full Size',
@@ -86,6 +98,11 @@ export default {
     filterStatus: (shown, total, filtered) => (filtered ? `Showing ${shown} of ${total} images` : `All ${total} images`),
     // Read out as the lightbox moves (the bar or dots show it on screen)
     position: (i, count) => `Image ${i} of ${count}`,
+    // Variants (several images of one view): the tag on a thumb ('text'
+    // badge), a button's name without a doc label, the button group's name
+    variantCount: (n) => `${n} Versions`,
+    variantLabel: (i) => `Version ${i}`,
+    variants: 'Versions',
   },
   // 3D turntable (components/turntable/): phase buttons, hint, corner badge
   turntable: {

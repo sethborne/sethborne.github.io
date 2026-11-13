@@ -12,10 +12,10 @@
 
 import {existsSync} from 'node:fs';
 import {mkdir, stat, writeFile} from 'node:fs/promises';
-import {join, parse, resolve} from 'node:path';
+import {join, resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {stripVTControlCharacters} from 'node:util';
-import {filesIn, sizeOf} from './image_resize.mjs';
+import {FULL_MAX, RAW_STILL, filesIn, fullWidthOf, siteName, sizeOf} from './image_resize.mjs';
 import {bad, dim, fail, heading, ok, path, warn} from './term.mjs';
 
 const NAME_RULE = /^[a-z0-9_]+$/;
@@ -28,11 +28,11 @@ const LABEL = {ok: 'OK', caution: 'Caution', problem: 'Problem'};
 
 const fileInfo = async (file) => ({...(await sizeOf(file)), mtime: (await stat(file)).mtimeMs});
 
-// {name: {width, height, mtime}} for every .jpg in the raw folder
+// {name: {width, height, mtime}} for every raw still (JPG, PNG, TIF)
 const readRaws = async (dir) => {
   if (!existsSync(dir)) return {};
-  const files = await filesIn(dir, /\.jpe?g$/i);
-  return Object.fromEntries(await Promise.all(files.map(async (file) => [parse(file).name, await fileInfo(join(dir, file))])));
+  const files = await filesIn(dir, RAW_STILL);
+  return Object.fromEntries(await Promise.all(files.map(async (file) => [siteName(file), await fileInfo(join(dir, file))])));
 };
 
 // {name: {800: info, ..., full: info}} for every output file
@@ -47,7 +47,7 @@ const readOutputs = async (dir) => {
 };
 
 // The page's own galleries (content.gallery, each section's gallery): the
-// names they list (compare images too) and the widths they load. A gallery
+// names they list (compare and variant images too) and the widths they load. A gallery
 // whose base isn't this page's img/gallery/ belongs to another page.
 const readUsage = async (page) => {
   const index = pathToFileURL(resolve(page, 'index.js'));
@@ -59,7 +59,7 @@ const readUsage = async (page) => {
   );
   if (!galleries.length) return null;
   return {
-    names: new Set(galleries.flatMap(({images}) => images.flatMap(({name, compare}) => [name, compare].filter(Boolean)))),
+    names: new Set(galleries.flatMap(({images}) => images.filter(({video}) => !video).flatMap(({name, compare, variants = []}) => [name, compare, ...variants].filter(Boolean)))),
     widths: [...new Set(galleries.flatMap(({widths}) => widths))].sort((a, b) => a - b),
   };
 };
@@ -68,7 +68,7 @@ const readUsage = async (page) => {
 
 // One image: a cell per size (ok, bad, capped, none) and notes
 // ({level, text}). listed: true/false from index.js, or null without --used.
-export const checkImage = ({name, raw, outputs = {}, widths, listed}) => {
+export const checkImage = ({name, raw, outputs = {}, widths, listed, fullMax = FULL_MAX}) => {
   const cells = {};
   const notes = [];
   const note = (level, text) => notes.push({level, text});
@@ -86,7 +86,7 @@ export const checkImage = ({name, raw, outputs = {}, widths, listed}) => {
     if (missing.length) missingNote(missing);
     for (const size of sizes) {
       const out = outputs[size];
-      const target = size === 'full' ? raw.width : Math.min(size, raw.width);
+      const target = size === 'full' ? fullWidthOf(raw, fullMax) : Math.min(size, raw.width);
       if (!out) {
         cells[size] = 'bad';
         continue;
@@ -183,7 +183,7 @@ const two = (n) => String(n).padStart(2, '0');
 const stamp = (d) =>
   `${d.getFullYear()}${two(d.getMonth() + 1)}${two(d.getDate())}_${two(d.getHours())}${two(d.getMinutes())}${two(d.getSeconds())}`;
 
-export const runCheck = async ({page, widths, used, log}) => {
+export const runCheck = async ({page, widths, used, log, fullMax = FULL_MAX}) => {
   const rawDir = join(page, 'img', '_raw', 'gallery');
   const outDir = join(page, 'img', 'gallery');
   const usage = used ? await readUsage(page) : null;
@@ -198,7 +198,7 @@ export const runCheck = async ({page, widths, used, log}) => {
   console.log();
 
   const rows = names.map((name) =>
-    checkImage({name, raw: raws[name], outputs: outputs[name], widths: sizesWide, listed: usage ? usage.names.has(name) : null}),
+    checkImage({name, raw: raws[name], outputs: outputs[name], widths: sizesWide, listed: usage ? usage.names.has(name) : null, fullMax}),
   );
   const sizes = [...sizesWide, 'full'];
   console.log(table(rows, sizes));

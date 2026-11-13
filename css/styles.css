@@ -12,6 +12,7 @@
 @import "../components/embed/embed.css";
 @import "../components/turntable/turntable.css";
 @import "../components/gallery/gallery.css";
+@import "../components/video/video.css";
 @import "../components/writeup/writeup.css";
 @import "../components/filter-bar/filter-bar.css";
 @import "../components/projects/projects.css";
@@ -19,6 +20,17 @@
 
 * {
   box-sizing: border-box;
+}
+
+/* No text selection starts on a button (2026-11-09). A press and drag
+   on the Back to Top button selected the heading, and Chrome repainted
+   its rotated CSS chevron bent out of shape; the jump links, Clear × and
+   menu ✕ use rotated shapes too. A press that wanders is a click, never
+   a selection. If something odd shows up around buttons (a label that
+   should be copyable, a drag that won't start), start here: a class can
+   turn it back on with user-select: text. PLAN.md → Decisions log. */
+button {
+  user-select: none;
 }
 
 html {
