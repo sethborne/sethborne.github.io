@@ -21,14 +21,28 @@ export const saveResized = async ({input, output, width, smooth = true, quality 
     withoutEnlargement: true,
     kernel: smooth ? 'lanczos3' : 'nearest',
   });
-  await (smooth ? image.jpeg({quality}) : image.png()).toFile(output);
+  // JPG out: flatten any transparency onto white (a PNG's see-through
+  // pixels would turn black) and convert to sRGB (a print TIF may be CMYK)
+  await (smooth ? image.flatten({background: '#ffffff'}).toColourspace('srgb').jpeg({quality}) : image.png()).toFile(output);
 };
+
+// Raw stills the gallery tools read: JPG, PNG or TIF (sharp reads all three;
+// the site ships JPG only)
+export const RAW_STILL = /\.(jpe?g|png|tiff?)$/i;
 
 // The name a raw file ships under: its name minus the extension and a
 // trailing _YYYYMMDD date, so raws keep their dates and the site's file
 // names stay clean (hines_westbrook_view_01_20150630.jpg ->
 // hines_westbrook_view_01). Shared by gallery_images and gallery_check.
 export const siteName = (file) => basename(file, extname(file)).replace(/_\d{8}$/, '');
+
+// _full (View Full Size): native size, but no side longer than FULL_MAX,
+// so a 7200px print file doesn't ship as a 20 MB JPG (and the site stays
+// well under GitHub Pages' 1 GB). Returns the width to
+// resize to; gallery_check uses it to know what _full should measure.
+export const FULL_MAX = 3000;
+export const fullWidthOf = ({width, height}, max = FULL_MAX) =>
+  Math.round(width * Math.min(1, max / Math.max(width, height)));
 
 export const widthOf = async (path) => (await sharp(path).metadata()).width;
 

@@ -91,10 +91,13 @@ export const fromCopy = (copy) => {
       if (images.length !== captions.length) {
         console.warn(`Page "${id}"${where}: ${images.length} gallery images in index.js, ${captions.length} in its doc`);
       }
-      // "| Before | After" on a doc line only means something for a pair
+      // "| Before | After" on a doc line only means something for a compare
+      // pair (2 labels) or a variant card (one per image)
       captions.forEach((caption, i) => {
-        if (caption.labels && !images[i]?.compare) {
-          console.warn(`Page "${id}"${where}: doc line ${i + 1} has labels, but image ${i + 1} has no compare`);
+        const image = images[i];
+        const wanted = image?.compare ? 2 : image?.variants?.length ? image.variants.length + 1 : 0;
+        if (caption.labels && caption.labels.length !== wanted) {
+          console.warn(`Page "${id}"${where}: doc line ${i + 1} has ${caption.labels.length} labels, image ${i + 1} takes ${wanted}`);
         }
       });
       return {...piece, gallery: {...piece.gallery, images: images.map((image, i) => ({...captions[i], ...image}))}};
@@ -183,7 +186,8 @@ export const pageImage = (here, name, alt, widths = PAGE_WIDTHS[name] ?? ALL_WID
 //   content: {
 //     turntable: turntable(import.meta.url, {
 //       phases: ['a', 'b', 'c'],   // folder ids, in order (A, B, C on the buttons)
-//       heading: 'NE',             // which way the camera faces in frame 0
+//       heading: 'NE',             // which way the camera faces in frame 0: a
+//                                  // compass point, or degrees (350 = 10° west of N)
 //       alt: 'Massing model of ...',
 //     }),
 //   }
@@ -237,11 +241,14 @@ export const turntable = (here, {phases, heading, alt, ...more}) => ({
 //   img/gallery/aerial_look_sw_800.jpg ... _2560.jpg   grid + lightbox
 //   img/gallery/aerial_look_sw_full.jpg                native size ("View Full Size")
 // List the images by name, in order (grid, lightbox and the doc's
-// Gallery lines all follow it). A name alone, or {name, focus} to frame
-// a crop in the grid (CSS object-position, e.g. 'center 30%'; the
-// lightbox always shows the whole image):
+// Gallery lines all follow it). A name alone, or {name, focus, zoom} to
+// frame a crop in the grid: focus is CSS object-position ('center 30%';
+// only the direction the image overflows moves: sideways for a wide
+// image, up and down for a tall one), zoom scales the thumb toward the
+// focus point (1.3 = 30% closer), so a wide image can move up and down
+// too. The lightbox always shows the whole image:
 //   gallery: gallery(import.meta.url, {
-//     images: ['aerial_look_sw', {name: 'plaza_square', focus: 'center 70%'}],
+//     images: ['aerial_look_sw', {name: 'plaza_square', focus: 'center 70%', zoom: 1.2}],
 //   })
 // Titles and captions come from the doc ("Title" or "Title: caption",
 // one line per image): under the section's Heading 4 Gallery, or the
@@ -287,6 +294,16 @@ export const turntable = (here, {phases, heading, alt, ...more}) => ({
 //                  middle), 'pill' ("Loop" / "Video" in the corner) or 'both'
 //   videoWidth     the MP4s' width on disk (tools/video.mjs)
 //   posterWidths   the posters' widths on disk
+//   videoVolume    a movie's starting volume, 0 to 1 (the visitor can
+//                  still turn it up; iPhones ignore it, hardware buttons only)
+//   variantBadge   a variant card's tag: 'count' (stack drawing + how many),
+//                  'icon' (the drawing alone) or 'text' ("3 Versions")
+//   variantButtons the lightbox's version buttons: 'tabs' (View tab look)
+//                  or 'timeline' (the turntable's steps on a line)
+//   variantPlace   'below' (under the image, centered) or 'over' (on the
+//                  image's top edge)
+//   variantTransition  between versions: 'fade', 'slide', 'zoom' or 'none'
+//                  (the hero's names); none under reduced motion
 // Video item: {name, video: 'loop'} (a living rendering: muted, looping,
 // with a Pause button) or {name, video: 'movie'} (sound and the browser's
 // controls). Files in img/video/, from npm run video:
@@ -295,6 +312,12 @@ export const turntable = (here, {phases, heading, alt, ...more}) => ({
 //   `name` is the top image (after), `compare` the bottom one (before;
 //   left of the line for x, below it for y);
 //   both need the same size and framing.
+// Variants (one card, several images of one view: revisions, phases,
+// options): {name, variants: ['<other>', ...]}. `name` shows first; the
+// lightbox gets a button per image. Labels from the doc line, one per
+// image in order: "Title: caption | Oct 2013 | Dec 2012"; without them,
+// "Version 1", "Version 2". Names: _v1, _v2 for revisions (see
+// ARCHITECTURE.md -> Gallery); the code never reads them.
 const GALLERY_DEFAULTS = {
   columns: 4,
   columnChoices: [2, 3, 4],
@@ -324,6 +347,11 @@ const GALLERY_DEFAULTS = {
   videoBadge: 'circle',
   videoWidth: 1280,
   posterWidths: [800, 1280],
+  videoVolume: 0.2,
+  variantBadge: 'count',
+  variantButtons: 'tabs',
+  variantPlace: 'below',
+  variantTransition: 'fade',
 };
 export const gallery = (here, {images, ...more}) => ({
   ...GALLERY_DEFAULTS,
@@ -340,11 +368,13 @@ export const gallery = (here, {images, ...more}) => ({
 // Files in img/video/ from npm run video (see gallery's video items):
 //   video: video(import.meta.url, {name: 'westbrook_animation'})
 // Settings: aspect (the frame's shape, a CSS aspect-ratio), width (the
-// MP4's width on disk), posterWidths.
+// MP4's width on disk), posterWidths, volume (starting volume, 0 to 1;
+// the visitor can still turn it up; iPhones ignore it).
 const VIDEO_DEFAULTS = {
   aspect: '16 / 9',
   width: 1280,
   posterWidths: [800, 1280],
+  volume: 0.2,
 };
 export const video = (here, {name, ...more}) => ({
   ...VIDEO_DEFAULTS,
