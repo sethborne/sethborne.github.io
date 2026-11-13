@@ -6,5 +6,6 @@ import textileResaleEconomy from './projects/gis/textile-resale-economy/index.js
 import textileContacts from './projects/gis/textile-contacts/index.js';
 import bgiSeaportSquare from './projects/vis/bgi-seaport-square/index.js';
 import hinesWestbrookStation from './projects/vis/hines-westbrook-station/index.js';
+import fritPikeAndRose from './projects/vis/frit-pike-and-rose/index.js';
 
-export default groupPage('index', 'Seth Borne', [textileResaleEconomy, textileContacts, bgiSeaportSquare, hinesWestbrookStation]);
+export default groupPage('index', 'Seth Borne', [textileResaleEconomy, textileContacts, bgiSeaportSquare, hinesWestbrookStation, fritPikeAndRose]);

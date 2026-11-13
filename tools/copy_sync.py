@@ -23,7 +23,8 @@ Doc layout (the guide at the top of every exported doc repeats this):
 - Sections nests, like the page's `sections` in index.js: a Heading 3 per
   section (its heading), then one paragraph of intro (optional), then a
   Heading 4 per piece with copy (Gallery: one "Title: caption" per image;
-  a compare pair may add " | Before | After", its own two labels).
+  a compare pair may add " | Before | After", its own two labels, and a
+  variant card one label per image: " | Oct 2013 | Dec 2012").
   Bullets, numbers and indents are formatting only; parsing reads the
   heading levels and the text.
 - Comments and tracked deletions are ignored; tracked insertions count.
@@ -56,7 +57,8 @@ PROJECTS = ROOT / 'content' / 'projects'
 #   links:  array of {label, href}, from Word hyperlinks
 #   titled: array of {title, text?, labels?}: "Title" or "Title: text". Gallery: a
 #           title + caption per image, in the order index.js lists them; a
-#           compare pair may end in " | Before | After" (its own two labels)
+#           compare pair may end in " | Before | After" (its own two labels),
+#           a variant card in one label per image (" | 2013 | 2012")
 #   sections: array of {title, text?, <piece copy>}, nested (see below)
 FIELDS = [
     ('Title', 'title', 'text'),
@@ -230,11 +232,13 @@ def to_value(kind, items, where):
     if kind == 'titled':
         out = []
         for text, _ in items:
-            # " | A | B" at the end: a compare pair's own layer names
+            # " | A | B" at the end: a compare pair's layer names, or a
+            # variant card's button labels (--check matches the count to
+            # index.js: two for compare, one per image for variants)
             main, *labels = text.split(' | ')
             labels = [label.strip() for label in labels]
-            if labels and (len(labels) != 2 or not all(labels)):
-                raise CopyError(f'{where}: a compare pair takes exactly two labels, "Title: caption | Before | After": {text!r}')
+            if labels and not all(labels):
+                raise CopyError(f'{where}: an empty label, "Title: caption | Label | Label": {text!r}')
             title, sep, rest = main.partition(': ')
             item = {'title': title, 'text': rest} if sep else {'title': title}
             if labels:
@@ -408,8 +412,10 @@ const walk = (node, path) => {
   // A gallery's copy: each image's title and caption
   const captionsOf = (gallery) =>
     (gallery?.images ?? []).filter((image) => image.title).map(({title, text, labels}) => ({title, ...(text && {text}), ...(labels && {labels})}));
-  // Which images are compare pairs, by position (for --check only)
-  const comparesOf = (gallery) => (gallery?.images ?? []).map((image) => Boolean(image.compare));
+  // How many labels each image takes, by position (for --check only):
+  // 2 for a compare pair, one per image for a variant card, else 0
+  const comparesOf = (gallery) =>
+    (gallery?.images ?? []).map((image) => (image.compare ? 2 : image.variants?.length ? image.variants.length + 1 : 0));
   // Sections: only their copy (heading, intro, piece copy); the pieces stay in index.js
   const sections = (node.sections ?? []).filter((s) => s.title).map(({title, text, gallery}) => {
     const captions = captionsOf(gallery);
@@ -454,7 +460,9 @@ def check_tree(pages, folders):
 
 
 def check_labels(pages, docs):
-    """Labels on a doc line ("| Before | After") only for compare pairs."""
+    """Labels on a doc line ("| Before | After") only where index.js takes
+    them, and as many as it takes: 2 for a compare pair, one per image for
+    a variant card."""
     warnings = []
     for page in pages:
         where = ' / '.join(page['path'])
@@ -468,8 +476,12 @@ def check_labels(pages, docs):
             galleries.append((f'sections / {section["title"]} / gallery', section.get('gallery', []), flags))
         for at, items, flags in galleries:
             for i, item in enumerate(items):
-                if item.get('labels') and not (i < len(flags) and flags[i]):
-                    warnings.append(f'{where} / {at}: line {i + 1} has labels, but image {i + 1} in index.js has no `compare`: {item["title"]}')
+                labels = item.get('labels')
+                wanted = flags[i] if i < len(flags) else 0
+                if labels and not wanted:
+                    warnings.append(f'{where} / {at}: line {i + 1} has labels, but image {i + 1} in index.js has no `compare` or `variants`: {item["title"]}')
+                elif labels and len(labels) != wanted:
+                    warnings.append(f'{where} / {at}: line {i + 1} has {len(labels)} labels, image {i + 1} takes {wanted}: {item["title"]}')
     return warnings
 
 
@@ -555,7 +567,7 @@ def doc_body(folder, flat, add_link, new_list):
         'Action items are "Lead: text". Links are hyperlinks: the text is the button label.',
         'Sections: a Heading 3 per section (its heading), in page order; under it one paragraph of intro (optional), '
         'then a Heading 4 per piece with copy: Gallery.',
-        'Gallery items are "Title" or "Title: caption", one per image, in gallery order (the numbers match the images list). A compare pair can end in " | After | Changes" to rename its two layers.',
+        'Gallery items are "Title" or "Title: caption", one per image, in gallery order (the numbers match the images list). A compare pair can end in " | After | Changes" to rename its two layers; a card with variants takes one label per image (" | 2013 | 2012").',
         'Comments are ignored, so use them for notes. Tracked changes are fine: insertions count, deletions don’t.',
     ]
     out = [para(run(label(folder)), 'Title')]

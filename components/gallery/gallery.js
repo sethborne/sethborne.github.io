@@ -50,11 +50,21 @@ const pairOf = (image) => ({name: image.compare});
 // else the gallery's compareLabels, else Before / After (ui.js)
 const labelsOf = (gallery, image) => image.labels ?? gallery.compareLabels ?? ui.gallery.compareLabels;
 const splitOf = (gallery, image) => image.split ?? gallery.compareSplit;
+// A variant card's images in button order (the one it shows first, then
+// the others), and a label for each: the doc line's, else "Version 2"
+const variantsOf = (image) => [image.name, ...(image.variants ?? [])];
+const variantLabelsOf = (image) => variantsOf(image).map((_, i) => image.labels?.[i] ?? ui.gallery.variantLabel(i + 1));
+// How long a version change runs (the CSS transition, plus a little)
+const VARIANT_MS = 400;
 // Where image i sits along the bar, in %: first at the left end, last at
 // the right. The knob and the ticks both use it, so they always line up.
 const spotOf = (i, count) => (count > 1 ? (i / (count - 1)) * 100 : 50);
 // Image i nearest a spot along the bar (0 to 1)
 const indexAt = (fraction, count) => Math.round(Math.min(Math.max(fraction, 0), 1) * (count - 1));
+// A thumb's framing: `focus` slides the crop (object-position) and is
+// the point `zoom` scales toward, so that spot stays put as it zooms
+const thumbStyle = ({focus, zoom}) =>
+  [focus && `object-position: ${focus}; transform-origin: ${focus}`, zoom && `--zoom: ${zoom}`].filter(Boolean).join('; ') || null;
 // The grid's share of the screen, for picking a thumb file
 const thumbSizes = (columns, phoneColumns) =>
   `(min-width: 600px) ${Math.ceil(100 / columns)}vw, ${Math.ceil(100 / phoneColumns)}vw`;
@@ -106,23 +116,36 @@ const gridIcon = (n) => {
 // sits down and right, and hides the lines of the one below where they
 // cross it: the lower one is drawn as just its visible edges (an open
 // path), so no fill or mask is needed.
-const compareIcon = () => {
+// A badge drawing: outlined shapes in currentColor, 16 x 14
+const badgeIcon = (shapes) => {
   const svg = document.createElementNS(SVG_NS, 'svg');
   svg.setAttribute('viewBox', '0 0 16 14');
   svg.setAttribute('aria-hidden', 'true');
   svg.setAttribute('class', 'gallery-badge-icon');
-  const stroke = {fill: 'none', stroke: 'currentColor', 'stroke-width': 1.4, 'stroke-linejoin': 'round'};
-  const add = (tag, attrs) => {
+  const stroke = {fill: 'none', stroke: 'currentColor', 'stroke-width': 1.4, 'stroke-linejoin': 'round', 'stroke-linecap': 'round'};
+  for (const [tag, attrs] of shapes) {
     const node = document.createElementNS(SVG_NS, tag);
     for (const [key, value] of Object.entries({...stroke, ...attrs})) node.setAttribute(key, value);
     svg.append(node);
-  };
-  // Lower image (1,1 to 11,9.5): its bottom and right edges stop where
-  // they meet the top image's outline
-  add('path', {d: 'M5 9.5 H1 V1 H11 V4.5'});
-  add('rect', {x: 5, y: 4.5, width: 10, height: 8.5, rx: 1.2});
+  }
   return svg;
 };
+
+// Lower image (1,1 to 11,9.5): its bottom and right edges stop where
+// they meet the top image's outline
+const compareIcon = () =>
+  badgeIcon([
+    ['path', {d: 'M5 9.5 H1 V1 H11 V4.5'}],
+    ['rect', {x: 5, y: 4.5, width: 10, height: 8.5, rx: 1.2}],
+  ]);
+
+// Variants: a print with the top edges of two more peeking above it
+const stackIcon = () =>
+  badgeIcon([
+    ['rect', {x: 1, y: 5, width: 14, height: 8, rx: 1.2}],
+    ['path', {d: 'M2.5 3 H13.5'}],
+    ['path', {d: 'M4 1 H12'}],
+  ]);
 
 // ----- Column control -----
 // One per screen size: 'wide' (600px and up) and 'phone'; gallery.css
@@ -152,11 +175,13 @@ const createColumnControl = ({size, choices, look, onPick}) => {
 // ----- Lightbox -----
 
 const createLightbox = ({title, gallery, onClose}) => {
-  const {images, position, barFill, ticks} = gallery;
+  const {images, position, barFill, ticks, variantButtons, variantPlace, variantTransition} = gallery;
   const count = images.length;
   // Mouse and trackpad: clicking the big image opens the full-size file
   const canOpen = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   let index = 0;
+  // Which of the current card's variants is showing
+  let variant = 0;
 
   const img = el('img', {class: 'gallery-lb-img', alt: '', sizes: '100vw', draggable: 'false'});
   const name = el('h2', {class: 'gallery-lb-title'});
@@ -183,6 +208,9 @@ const createLightbox = ({title, gallery, onClose}) => {
   const close = button('gallery-lb-close', 'Close', '×');
   const prev = button('gallery-lb-prev', 'Previous image', '‹');
   const next = button('gallery-lb-next', 'Next image', '›');
+  // Variant buttons, filled per card; under the image or on its top edge
+  const variantRow = el('div', {class: 'gallery-lb-variants', role: 'group', 'aria-label': ui.gallery.variants, hidden: true});
+  if (variantPlace === 'over') stage.append(variantRow);
 
   // Position: a bar (track, fill, ticks, knob) or one dot per image
   const fill = barFill && el('span', {class: 'gallery-bar-fill'});
@@ -205,6 +233,7 @@ const createLightbox = ({title, gallery, onClose}) => {
       'div',
       {class: 'gallery-lb'},
       stage,
+      variantPlace === 'over' ? null : variantRow,
       el('div', {class: 'gallery-lb-meta'}, el('div', {class: 'gallery-lb-text'}, name, caption, live), full, fullPair),
       positionEl,
     ),
@@ -213,6 +242,66 @@ const createLightbox = ({title, gallery, onClose}) => {
     next,
   );
   dialog.classList.toggle('can-open', canOpen);
+  dialog.classList.add(`gallery-lightbox--variants-${variantButtons}`, `gallery-lightbox--variants-${variantPlace}`, `gallery-lightbox--vt-${variantTransition}`);
+
+  // A version change: the old picture stays on top as a copy (the
+  // "ghost") and leaves by the transition while the new one arrives
+  // underneath. dir: 1 = a later button (slide comes in from the right).
+  const clearGhosts = () => stage.querySelectorAll('.gallery-lb-ghost').forEach((ghost) => ghost.remove());
+  const swapPicture = (files, dir) => {
+    const animate = variantTransition !== 'none' && !REDUCED.matches && !img.hidden;
+    const ghost = animate && img.cloneNode();
+    if (ghost) {
+      ghost.classList.add('gallery-lb-ghost');
+      ghost.alt = '';
+      img.after(ghost);
+      stage.style.setProperty('--dir', dir);
+      img.classList.add('is-in-start');
+    }
+    img.srcset = srcsetFor(files);
+    img.src = fallbackFor(files);
+    if (!ghost) return;
+    // Start once the new picture is ready, so the change shows it whole
+    const go = () =>
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          img.classList.remove('is-in-start');
+          ghost.classList.add('is-out');
+          setTimeout(() => ghost.remove(), VARIANT_MS);
+        }),
+      );
+    img.decode().then(go, go);
+  };
+
+  const showVariant = (image, k, dir = 1) => {
+    variant = k;
+    const name = variantsOf(image)[k];
+    swapPicture(filesOf(gallery, {name}), dir);
+    img.alt = `${altOf(image)} (${variantLabelsOf(image)[k]})`;
+    full.href = fullOf(gallery, {name});
+    variantRow.querySelectorAll('button').forEach((b, j) => b.setAttribute('aria-pressed', String(j === k)));
+  };
+
+  // One button per variant; a card without variants hides the row
+  const renderVariants = (image) => {
+    const names = variantsOf(image);
+    const has = names.length > 1 && !image.compare && !image.video;
+    variantRow.hidden = !has;
+    variantRow.replaceChildren();
+    if (!has) return;
+    const buttons = variantLabelsOf(image).map((label, k) => {
+      const b = el('button', {type: 'button', class: 'gallery-lb-variant', 'aria-pressed': String(k === 0)}, label);
+      b.addEventListener('click', () => {
+        if (k === variant) return;
+        showVariant(image, k, k > variant ? 1 : -1);
+        live.textContent = label;
+      });
+      return b;
+    });
+    variantRow.append(el('div', {class: 'gallery-lb-variant-list', style: `--steps: ${names.length}`}, buttons));
+    // Warm the other versions so the first click is instant
+    names.slice(1).forEach((name) => Object.assign(new Image(), {sizes: '100vw', srcset: srcsetFor(filesOf(gallery, {name}))}));
+  };
 
   // Warm the neighbors so the arrows feel instant
   const preload = (i) => {
@@ -278,6 +367,8 @@ const createLightbox = ({title, gallery, onClose}) => {
       if (!REDUCED.matches) video.play().catch(() => {});
     } else {
       const video = el('video', {class: 'gallery-video', src, poster, controls: true, playsinline: true, preload: 'auto', 'aria-label': altOf(image)});
+      // A property, not an attribute: HTML has no volume attribute
+      video.volume = gallery.videoVolume ?? 1;
       player.append(video);
       video.play().catch(() => {});
     }
@@ -285,6 +376,9 @@ const createLightbox = ({title, gallery, onClose}) => {
 
   const show = (i) => {
     index = (i + count) % count;
+    variant = 0;
+    clearGhosts();
+    img.classList.remove('is-in-start');
     const image = images[index];
     const files = picOf(gallery, image);
     showCompare(image);
@@ -297,6 +391,8 @@ const createLightbox = ({title, gallery, onClose}) => {
     caption.textContent = image.text ?? '';
     live.textContent = `${ui.gallery.position(index + 1, count)}. ${altOf(image)}`;
     full.href = fullOf(gallery, image);
+    renderVariants(image);
+    if (!variantRow.hidden) img.alt = `${altOf(image)} (${variantLabelsOf(image)[0]})`;
     const spot = `${spotOf(index, count)}%`;
     knob.style.left = spot;
     if (fill) fill.style.width = spot;
@@ -311,6 +407,7 @@ const createLightbox = ({title, gallery, onClose}) => {
   close.addEventListener('click', () => dialog.close());
   dialog.addEventListener('close', () => {
     compare?.destroy();
+    clearGhosts();
     // Removing the <video> stops it (and its sound)
     player.replaceChildren();
     onClose(index);
@@ -380,7 +477,7 @@ const createLightbox = ({title, gallery, onClose}) => {
 // key: the gallery's place on its page (a section id, or 'content'), for
 // keeping filter picks on the history entry.
 export const createGallery = ({title, gallery, lead, key = 'content'}) => {
-  const {images, columnChoices, phoneColumnChoices, aspect, columnControl, thumbHover, position, barFill, ticks, tickShape, tickSize, compareThumb, compareBadge, filteredMark, videoGrid, videoBadge} = gallery;
+  const {images, columnChoices, phoneColumnChoices, aspect, columnControl, thumbHover, position, barFill, ticks, tickShape, tickSize, compareThumb, compareBadge, filteredMark, videoGrid, videoBadge, variantBadge} = gallery;
   const choices = {wide: columnChoices, phone: phoneColumnChoices};
   const columns = {
     wide: readColumns(STORE_KEYS.wide, choices.wide, gallery.columns),
@@ -398,7 +495,7 @@ export const createGallery = ({title, gallery, lead, key = 'content'}) => {
       alt: '',
       loading: 'lazy',
       decoding: 'async',
-      style: image.focus && `object-position: ${image.focus}`,
+      style: thumbStyle(image),
     });
   };
 
@@ -415,8 +512,23 @@ export const createGallery = ({title, gallery, lead, key = 'content'}) => {
     return {pics: [thumbPic(image)], extra: [loop, badge], loop};
   };
 
+  // A variant thumb: the first image + a tag (variantBadge): the stack
+  // drawing and how many ('count'), the drawing alone, or "3 Versions"
+  const variantThumbOf = (image) => {
+    const n = variantsOf(image).length;
+    const badge = el(
+      'span',
+      {class: `gallery-badge gallery-badge--variant${variantBadge === 'icon' ? ' gallery-badge--icon' : ''}`},
+      variantBadge !== 'text' && stackIcon(),
+      variantBadge === 'count' && el('span', {}, String(n)),
+      variantBadge === 'text' && el('span', {}, ui.gallery.variantCount(n)),
+    );
+    return {pics: [thumbPic(image)], extra: badge};
+  };
+
   const thumbOf = (image) => {
     if (image.video) return videoThumbOf(image);
+    if (image.variants?.length && !image.compare) return variantThumbOf(image);
     if (!image.compare) return {pics: [thumbPic(image)]};
     if (compareThumb === 'split') {
       return {
@@ -459,7 +571,11 @@ export const createGallery = ({title, gallery, lead, key = 'content'}) => {
   const thumbs = images.map((image, i) => {
     const {pics, extra, cls, loop} = thumbOf(image);
     const [before, after] = labelsOf(gallery, image);
-    const label = image.compare ? `${altOf(image)}, ${before} and ${after}` : altOf(image);
+    const label = image.compare
+      ? `${altOf(image)}, ${before} and ${after}`
+      : image.variants?.length
+        ? `${altOf(image)}, ${ui.gallery.variantCount(variantsOf(image).length)}`
+        : altOf(image);
     const action = {loop: 'play muted loop', movie: 'play video with sound'}[image.video] ?? 'open larger';
     const item = el(
       'button',

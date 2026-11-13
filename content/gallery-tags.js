@@ -43,6 +43,7 @@ const view = facet('view', 'View');
 export const VIEW_AERIAL = view('aerial', 'Aerial');
 export const VIEW_EXTERIOR = view('exterior', 'Exterior');
 export const VIEW_INTERIOR = view('interior', 'Interior');
+export const VIEW_PLAN = view('plan', 'Plan');
 
 // Use
 const use = facet('use', 'Use', {ownRow: true});
@@ -51,5 +52,6 @@ export const USE_RESIDENTIAL = use('residential', 'Residential');
 export const USE_RETAIL = use('retail', 'Retail');
 export const USE_MIXED_USE = use('mixed-use', 'Mixed Use');
 export const USE_CIVIC = use('civic', 'Civic');
+export const USE_ENTERTAINMENT = use('entertainment', 'Entertainment');
 export const USE_PARK = use('park', 'Park');
 export const USE_WATERFRONT = use('waterfront', 'Waterfront');

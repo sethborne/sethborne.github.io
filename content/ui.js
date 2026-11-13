@@ -98,6 +98,11 @@ export default {
     filterStatus: (shown, total, filtered) => (filtered ? `Showing ${shown} of ${total} images` : `All ${total} images`),
     // Read out as the lightbox moves (the bar or dots show it on screen)
     position: (i, count) => `Image ${i} of ${count}`,
+    // Variants (several images of one view): the tag on a thumb ('text'
+    // badge), a button's name without a doc label, the button group's name
+    variantCount: (n) => `${n} Versions`,
+    variantLabel: (i) => `Version ${i}`,
+    variants: 'Versions',
   },
   // 3D turntable (components/turntable/): phase buttons, hint, corner badge
   turntable: {

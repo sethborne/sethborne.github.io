@@ -19,9 +19,10 @@ import ui from '../../content/ui.js';
 // 8-point compass, 45° apart
 const POINTS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 
-// Camera heading in degrees (0 = north, 90 = east) at a frame
+// Camera heading in degrees (0 = north, 90 = east) at a frame. `heading`
+// is a compass point ('NE') or degrees (350: a little west of north)
 const headingAt = (frame, {frames, heading, clockwise}) => {
-  const start = POINTS.indexOf(heading) * 45;
+  const start = typeof heading === 'number' ? heading : POINTS.indexOf(heading) * 45;
   const turn = ((frame * 360) / frames) * (clockwise ? 1 : -1);
   return (((start + turn) % 360) + 360) % 360;
 };

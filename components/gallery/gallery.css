@@ -147,11 +147,13 @@
   background: var(--bg-soft);
 }
 
+/* --zoom: an image's own `zoom` (thumbs only), toward its `focus` */
 .gallery-thumb img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transform: scale(var(--zoom, 1));
   transition: transform 0.25s ease;
 }
 
@@ -192,7 +194,7 @@
   }
 
   .gallery--hover-zoom .gallery-item:hover .gallery-thumb img {
-    transform: scale(1.04);
+    transform: scale(calc(var(--zoom, 1) * 1.04));
   }
 
   .gallery-item:hover .gallery-name {
@@ -522,9 +524,13 @@ html:has(.gallery-lightbox[open]) {
     transition: none;
   }
 
-  .gallery--hover-lift .gallery-item:hover,
-  .gallery--hover-zoom .gallery-item:hover .gallery-thumb img {
+  .gallery--hover-lift .gallery-item:hover {
     transform: none;
+  }
+
+  /* No hover zoom, but an image's own zoom stays */
+  .gallery--hover-zoom .gallery-item:hover .gallery-thumb img {
+    transform: scale(var(--zoom, 1));
   }
 }
 
@@ -1042,6 +1048,171 @@ html:has(.gallery-lightbox[open]) {
 @media (prefers-reduced-motion: reduce) {
   .gallery-play,
   .gallery-thumb .gallery-video {
+    transition: none;
+  }
+}
+
+/* ===========================
+   Variants: one card, several images of one view (gallery.js,
+   renderVariants). Buttons under the image ('below', centered) or on its
+   top edge ('over'); looks 'tabs' (the View tabs, on dark) or 'timeline'
+   (the turntable's steps)
+   =========================== */
+.gallery-lb-variants {
+  display: flex;
+  justify-content: center;
+  padding-top: 12px;
+}
+
+.gallery-lb-variants[hidden] {
+  display: none;
+}
+
+.gallery-lightbox--variants-over .gallery-lb-variants {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  translate: -50% 0;
+  z-index: 2;
+  padding: 6px 16px;
+  background: rgb(20 21 24 / 0.55);
+  border-radius: 999px;
+}
+
+.gallery-lb-variant-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.gallery-lb-variant {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: color-mix(in srgb, var(--bg) 70%, transparent);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.gallery-lb-variant:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .gallery-lb-variant:hover {
+    color: var(--accent);
+  }
+}
+
+/* Tabs: the current one white with an orange underline */
+.gallery-lightbox--variants-tabs .gallery-lb-variant-list {
+  gap: 0 22px;
+}
+
+.gallery-lightbox--variants-tabs .gallery-lb-variant {
+  padding: 4px 0 6px;
+  border-bottom: 2px solid transparent;
+}
+
+.gallery-lightbox--variants-tabs .gallery-lb-variant[aria-pressed="true"] {
+  color: var(--bg);
+  font-weight: 600;
+  border-bottom-color: var(--accent);
+}
+
+/* Timeline: dots on a line (from the first dot's center to the last's,
+   half a column in from each end), the current one ringed in orange */
+.gallery-lightbox--variants-timeline .gallery-lb-variant-list {
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(84px, auto);
+}
+
+.gallery-lightbox--variants-timeline .gallery-lb-variant-list::before {
+  content: "";
+  position: absolute;
+  top: 9px;
+  left: calc(50% / var(--steps));
+  right: calc(50% / var(--steps));
+  height: 2px;
+  background: color-mix(in srgb, var(--bg) 35%, transparent);
+}
+
+.gallery-lightbox--variants-timeline .gallery-lb-variant {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px 2px;
+}
+
+.gallery-lightbox--variants-timeline .gallery-lb-variant::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  box-sizing: border-box;
+  background: #2a2b2f;
+  border: 2px solid color-mix(in srgb, var(--bg) 45%, transparent);
+  border-radius: 50%;
+}
+
+.gallery-lightbox--variants-timeline .gallery-lb-variant[aria-pressed="true"] {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.gallery-lightbox--variants-timeline .gallery-lb-variant[aria-pressed="true"]::before {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+/* Version changes (variantTransition, the hero's names): the old picture
+   (a copy on top, .gallery-lb-ghost) leaves while the new one arrives.
+   is-in-start is the new one's first frame, set with no transition so
+   only its removal animates. --dir: 1 = a later button. */
+.gallery-lb-img {
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.gallery-lb-img.is-in-start {
+  transition: none;
+}
+
+.gallery-lb-ghost {
+  pointer-events: none;
+}
+
+.gallery-lb-ghost.is-out {
+  opacity: 0;
+}
+
+.gallery-lightbox--vt-slide .gallery-lb-stage {
+  overflow: hidden;
+}
+
+.gallery-lightbox--vt-slide .gallery-lb-ghost.is-out {
+  opacity: 1;
+  transform: translateX(calc(-100% * var(--dir, 1)));
+}
+
+.gallery-lightbox--vt-slide .gallery-lb-img.is-in-start {
+  transform: translateX(calc(100% * var(--dir, 1)));
+}
+
+.gallery-lightbox--vt-zoom .gallery-lb-ghost.is-out {
+  transform: scale(1.04);
+}
+
+.gallery-lightbox--vt-zoom .gallery-lb-img.is-in-start {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery-lb-img {
     transition: none;
   }
 }

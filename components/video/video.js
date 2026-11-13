@@ -8,7 +8,7 @@ import {el} from '../../js/dom.js';
 import {fallbackFor, srcsetFor} from '../../js/images.js';
 
 export const createVideo = ({title, video}) => {
-  const {base, name, width, posterWidths, aspect} = video;
+  const {base, name, width, posterWidths, aspect, volume = 1} = video;
   const poster = {base: `${base}${name}_poster`, widths: posterWidths};
   const src = `${base}${name}_${width}.mp4`;
 
@@ -27,6 +27,8 @@ export const createVideo = ({title, video}) => {
 
   start.addEventListener('click', () => {
     const player = el('video', {class: 'video-player', src, poster: fallbackFor(poster), controls: true, playsinline: true, preload: 'auto', 'aria-label': title});
+    // A property, not an attribute: HTML has no volume attribute
+    player.volume = volume;
     frame.replaceChildren(player);
     player.play().catch(() => {});
     player.focus();
