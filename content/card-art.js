@@ -8,10 +8,10 @@
 // line here. Without one, the card shows the plain map grid.
 
 export default {
-  'project': 'img/cards/card_project.svg', // stacked map layers
+  'project': 'img/cards/card_project.svg', // the site icon: map layers under a pin
   'web-app': 'img/cards/card_web_app.svg', // browser window with a map
   'form': 'img/cards/card_form.svg', // clipboard with a map pin
   'data-pipeline': 'img/cards/card_data_pipeline.svg', // records into a funnel, out to a table
   'review-tool': 'img/cards/card_review_tool.svg', // two records side by side, a check
-  'interactive-model': 'img/cards/card_interactive_model.svg', // block on a turntable, orbit arrow
+  'interactive-model': 'img/cards/card_interactive_model.svg', // site model: buildings on a 5x5 ground plane, orbit arrow
 };

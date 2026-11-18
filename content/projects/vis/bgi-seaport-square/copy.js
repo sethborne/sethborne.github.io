@@ -6,6 +6,7 @@
 export default {
   title: 'BGI Seaport Square',
   summary: 'Visualization of the Seaport Square development on the Boston waterfront: still renderings and an interactive massing model of its five build-out phases, made in 3ds Max and V-Ray as collateral for an iPad app.',
+  cardSummary: 'Still renderings and an interactive massing model of Boston’s Seaport Square, five build-out phases in 3ds Max and V-Ray.',
   sections: [
     {
       title: 'Renderings',

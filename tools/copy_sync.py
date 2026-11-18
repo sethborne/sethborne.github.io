@@ -63,6 +63,8 @@ PROJECTS = ROOT / 'content' / 'projects'
 FIELDS = [
     ('Title', 'title', 'text'),
     ('Summary', 'summary', 'text'),
+    # Optional: a shorter line for the page's cards (else they show Summary)
+    ('Card Summary', 'cardSummary', 'text'),
     ('Try This', 'content.tryThis', 'text'),
     ('Sections', 'sections', 'sections'),
     # The page's own gallery (content.gallery); a section's goes under it
@@ -99,6 +101,11 @@ LINT = [
     (re.compile('  '), 'double space'),
     (re.compile(r"(?<=\w)'(?=\w)"), "straight apostrophe (use ’)"),
 ]
+
+# A summary longer than this, with no Card Summary, makes a tall card
+# (about 3 lines at ~42 characters a line in a 3-column grid; card.css
+# clamps card text at 4, so text under this is never cut)
+CARD_SUMMARY_MAX = 140
 
 # Fields shown as titles, headings or button labels: Title Case
 # (CLAUDE.md → Writing rules). These small words may stay lowercase
@@ -402,7 +409,7 @@ STUB_JS = '// Placeholder until this page has a doc: run tools/copy_sync.py --ex
 
 NODE_DUMP = """
 const {default: root} = await import(process.argv.at(-1));
-const KEYS = ['title', 'summary', 'linksTitle', 'links', 'writeup'];
+const KEYS = ['title', 'summary', 'cardSummary', 'linksTitle', 'links', 'writeup'];
 const pages = [];
 const walk = (node, path) => {
   const copy = Object.fromEntries(KEYS.filter((k) => node[k] !== undefined).map((k) => [k, node[k]]));
@@ -508,6 +515,12 @@ def lint(where, fields):
             lower = key in TITLE_CASE_KEYS and not_title_case(text)
             if lower:
                 warnings.append(f'{where} / {key}: not Title Case ({", ".join(lower)}): {text}')
+    # Cards show Card Summary, else Summary: a long one stretches its row
+    card = fields.get('cardSummary') or fields.get('summary')
+    if isinstance(card, str) and len(card) > CARD_SUMMARY_MAX:
+        key = 'cardSummary' if fields.get('cardSummary') else 'summary'
+        fix = 'shorten it' if key == 'cardSummary' else 'add a shorter Card Summary'
+        warnings.append(f'{where} / {key}: {len(card)} characters on cards (over {CARD_SUMMARY_MAX}); {fix}')
     # Section headings and image titles are titles; their text is a sentence
     titled = [('gallery', item) for item in fields.get('gallery', [])]
     for section in fields.get('sections', []):

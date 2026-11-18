@@ -57,6 +57,9 @@ export default {
     linksTitle: 'Links',
     // Between a writeup and the child cards below it
     childrenTitle: 'In This Project',
+    // Above the other pages of the same project, at the end of a page with
+    // no cards of its own
+    siblingsTitle: 'More in This Project',
     // Under the tags of a page with two or more sections: links down to each
     jumpLabel: 'On This Page',
     // The up button before each of those section headings (tooltip + screen readers)

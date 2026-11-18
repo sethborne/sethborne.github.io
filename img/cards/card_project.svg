@@ -13,8 +13,8 @@
 <mask id="mMid" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32"><rect width="32" height="32" fill="#fff"/><use href="#dMid" fill="#000"/></mask>
 <mask id="mHole" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32"><rect width="32" height="32" fill="#fff"/><circle cx="16" cy="8.16" r="2.08" fill="#000"/></mask>
 </defs>
-<!-- 32x32 icon at 2.8x = 89.6 square, centered in 160x100 -->
-<g transform="translate(35.2 5.2) scale(2.8)">
+<!-- 32x32 icon at 3.3x, its drawing (y 3.2 to 28.9) centered in 160x100 -->
+<g transform="translate(27.20 -2.97) scale(3.3)">
 <g mask="url(#mPin)">
  <g mask="url(#mTop)">
   <g mask="url(#mMid)">

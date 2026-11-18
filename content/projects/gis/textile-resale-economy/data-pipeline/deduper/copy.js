@@ -6,4 +6,5 @@
 export default {
   title: 'Deduper',
   summary: 'Browser tool that shows likely duplicate place records side by side. A reviewer keeps one, keeps both or removes both, and a small Node.js script saves each decision to a JSON cache that later runs reapply.',
+  cardSummary: 'Browser tool for settling likely duplicate records side by side. Each decision is cached, so later runs reapply it.',
 };

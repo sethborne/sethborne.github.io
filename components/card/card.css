@@ -158,6 +158,18 @@
   flex: 1;
 }
 
+/* Safety net: card text stops at 4 lines with an ellipsis, so one long
+   summary never stretches its row. copy_sync --check warns past 140
+   characters, ~3 lines (CARD_SUMMARY_MAX), so text that passes is never cut. The clamp
+   sits on an inner span, since flex: 1 above stretches the p itself */
+.card-body p > span {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
+}
+
 .card .pills {
   margin-top: 14px;
 }
