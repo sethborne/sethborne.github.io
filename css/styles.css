@@ -34,6 +34,14 @@ button {
   user-select: none;
 }
 
+/* Selected text: a light orange wash, the text keeps its own color.
+   A solid --accent fill with white text would match the buttons, but
+   white on orange is ~2.2:1, hard to read across a whole paragraph. */
+::selection {
+  background: color-mix(in srgb, var(--accent) 60%, transparent);
+  color: inherit;
+}
+
 html {
   scroll-behavior: smooth;
 }
