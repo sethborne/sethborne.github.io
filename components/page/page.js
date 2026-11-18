@@ -191,6 +191,17 @@ export const createPage = ({tree, path}) => {
     node: child,
     path: [...path, child.id],
   }));
+  // A page with no cards of its own, inside a project: the other pages
+  // in that project (its siblings), so a visitor who landed here from the
+  // filter grid has somewhere to go next. The trail starts at the tree
+  // root, so a top-level page (length 2) gets none: its
+  // siblings are other projects, already on home
+  const parent = trail.length > 2 ? trail.at(-2) : null;
+  const siblings = isLeaf(node) && parent
+    ? parent.children
+        .filter((sibling) => sibling !== node)
+        .map((sibling) => ({node: sibling, path: [...path.slice(0, -1), sibling.id]}))
+    : [];
 
   const head = el(
     'header',
@@ -251,6 +262,8 @@ export const createPage = ({tree, path}) => {
         node.writeup &&
         el('h2', {class: 'page-subhead'}, ui.page.childrenTitle),
       children.length > 0 && createCardGrid(children),
+      siblings.length > 0 && el('h2', {class: 'page-subhead'}, ui.page.siblingsTitle),
+      siblings.length > 0 && createCardGrid(siblings),
     ),
     heading: h1,
     title: node.title,
