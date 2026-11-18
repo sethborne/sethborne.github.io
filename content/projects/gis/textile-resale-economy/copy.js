@@ -6,6 +6,7 @@
 export default {
   title: 'Washington State Textile Secondary Resale Economy',
   summary: 'A statewide dataset of 2,445 places in Washington’s secondary textile resale economy, for the Recycling Market Development Center. A Node.js and Python pipeline conforms five sources, removes duplicates through human review and publishes to ArcGIS for an Experience Builder app. 3rd place, WAGISA Dick Thomas Award.',
+  cardSummary: 'A statewide dataset of 2,445 Washington textile resale places, built by a Node.js and Python pipeline. 3rd place, WAGISA Dick Thomas Award.',
   linksTitle: 'Live on the Ecology Portal',
   links: [
     {

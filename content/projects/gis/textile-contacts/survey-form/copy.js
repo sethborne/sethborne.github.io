@@ -6,6 +6,7 @@
 export default {
   title: 'Survey123 Form',
   summary: "The form behind both apps. Entries publish automatically, as the client asked, and a built-in 'pending approval' status supports a review-first workflow instead.",
+  cardSummary: 'The Survey123 form behind both apps. Entries publish automatically, with a pending approval status ready for review first.',
   content: {
     tryThis: 'Fill in the form with made-up details and submit it.',
     openLabel: 'Open Survey Demo in New Tab',

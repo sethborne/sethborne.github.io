@@ -6,6 +6,7 @@
 export default {
   title: 'Public App',
   summary: 'Public Experience Builder map of all 2,445 places, live on Ecology’s portal. Built and styled by my teammate Chelsea on view layers I published from the pipeline.',
+  cardSummary: 'Public Experience Builder map of all 2,445 places, live on Ecology’s portal, on view layers published from the pipeline.',
   content: {
     tryThis: 'Pick a category, then click a place to see what it offers. [?]',
     openLabel: 'Open the App on the Ecology Portal',

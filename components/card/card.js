@@ -74,6 +74,7 @@ const createThumb = ({photo, art}) =>
 //   top-level leaf       'Project · Interactive Model' (a standalone project: all its types)
 //   leaf in a project    'Web App' (its first type)
 export const createCard = ({node, path, eyebrow: override}) => {
+  const summary = node.cardSummary ?? node.summary;
   const leaf = isLeaf(node);
   const topLevel = path.length === 1;
   const types = leaf ? (node.tags.type ?? []).map((id) => labelFor('type', id)) : [];
@@ -100,7 +101,9 @@ export const createCard = ({node, path, eyebrow: override}) => {
         {},
         el('a', {href: `#/${path.join('/')}`}, node.title),
       ),
-      node.summary && el('p', {}, node.summary),
+      // A page's Card Summary (its doc), else its Summary; the span
+      // carries the 4-line clamp (card.css)
+      summary && el('p', {}, el('span', {}, summary)),
       tools.length > 0 &&
         el(
           'ul',

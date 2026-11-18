@@ -6,6 +6,7 @@
 export default {
   title: 'Experience Builder: Internal App',
   summary: 'Staff app for revising and managing entries shown on the public map. Since entries publish automatically, corrections happen here after they go live.',
+  cardSummary: 'Staff app for correcting and managing entries on the public map after they go live.',
   content: {
     tryThis: 'Open an entry, change a field and save it. The public map shows the edit.',
     openLabel: 'Open Internal App Demo in New Tab',
