@@ -164,16 +164,62 @@ export const pendingEmbed = (placeholder) => ({placeholder});
 //   thumb    a card is up to ~550px wide (one column just under 600px,
 //            two on tablets) -> ~1100 -> 1280
 // Other names get every width; pass `widths` to override.
-const PAGE_WIDTHS = {
+// tools/page_images.mjs (npm run page-images) reads these too.
+export const PAGE_WIDTHS = {
   preview: [800, 1280, 1600, 2560],
   thumb: [800, 1280],
 };
-const ALL_WIDTHS = [800, 1280, 1600, 2560];
+export const ALL_WIDTHS = [800, 1280, 1600, 2560];
 export const pageImage = (here, name, alt, widths = PAGE_WIDTHS[name] ?? ALL_WIDTHS) => ({
   base: new URL(`img/${name}`, here).href,
   widths,
   alt,
 });
+
+// Several images for one spot, from a {name: alt} list, in order. For a
+// frame with more than one screenshot: `fallback` takes a list, and two
+// or more become a slideshow (the card shows the first). A line commented
+// out of the list drops that image.
+//   const TAKES = {preview_review_app_01: 'Screenshot of...', ...};
+//   fallback: pageImages(import.meta.url, TAKES, PAGE_WIDTHS.preview)
+export const pageImages = (here, takes, widths) =>
+  Object.entries(takes).map(([name, alt]) => pageImage(here, name, alt, widths));
+
+// Slideshow settings, for a page frame with two or more images (a
+// `fallback` list). A page overrides any of them beside its fallback,
+// `content: {fallback: [...], slides: {autoplay: false}}`; the embed
+// component reads the page's value first, then these. Mocked in
+// _mockups/frame-slideshow/.
+//   controls    'arrows-dots' (‹ › at the edges + dots at the bottom),
+//               'dots', 'arrows-bar' (the gallery's position bar) or
+//               'arrows-count' ("2 / 3")
+//   arrows      'always' or 'hover' (shown on hover or focus; touch
+//               screens always show them)
+//   arrowLook   'edge' (a full-height band down each side, fading from
+//               white into the screenshot, with the ink glyph; the whole
+//               side is the target), 'tab' (a white handle on the frame
+//               edge), 'tab-dark', 'square' (outlined, like Back to Top's
+//               square), 'circle-dark', 'ink' (the lightbox's ‹ › in --ink with a white halo),
+//               'white' (white with a dark shadow) or 'disc' (a chevron
+//               on a white circle)
+//   transition  'fade', 'slide', 'zoom' or 'none' (the hero's names;
+//               none under reduced motion)
+//   autoplay    true: advances every `seconds`, with a pause button;
+//               holds while the pointer is over it or focus is inside,
+//               and never runs under reduced motion. false: moves only
+//               when asked (arrows, dots, swipe, keys)
+//   seconds     autoplay's time per image
+//   progress    with autoplay: 'line' (a thin orange line along the
+//               bottom counts down to the next image) or 'off'
+export const SLIDES_DEFAULTS = {
+  controls: 'arrows-dots',
+  arrows: 'always',
+  arrowLook: 'edge',
+  transition: 'fade',
+  autoplay: true,
+  seconds: 5,
+  progress: 'line',
+};
 
 // A turntable: a 3D model you drag to turn, from rendered frames (one
 // image per 5° step), optionally in phases (build-out over time). The

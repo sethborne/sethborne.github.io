@@ -5,7 +5,12 @@
 // decides instead (ARCHITECTURE.md → Embeds).
 import {el} from '../../js/dom.js';
 import {fallbackFor, srcsetFor} from '../../js/images.js';
+import {SLIDES_DEFAULTS} from '../../content/helpers.js';
 import ui from '../../content/ui.js';
+import {createSlides} from './slides.js';
+
+// `fallback` is one image or a list; two or more become a slideshow
+const imagesOf = (fallback) => [fallback].flat().filter(Boolean);
 
 // emptyText fills the box when there's no screenshot yet
 const renderFallback = (fallback, emptyText) =>
@@ -48,61 +53,88 @@ const renderIframe = (src, title) =>
 // (screen readers hear the label; the link says it opens a new tab)
 const openText = (openLabel) => [openLabel, el('span', {'aria-hidden': 'true'}, ' ↗')];
 
+// The link's inside: the button look plus the screen reader's words
+const linkParts = (title, openLabel) => [
+  el('span', {class: 'btn btn-primary embed-load'}, openText(openLabel)),
+  el('span', {class: 'visually-hidden'}, ` ${title} (opens in a new tab)`),
+];
+
 // For an app that doesn't work well in a frame (it picks a cramped
 // layout, or opens its own tabs): the screenshot is a link to the app in
 // a new tab, the browser's normal behavior. No iframe, nothing to break.
-const renderLinkFrame = ({url, title, fallback, openLabel}) =>
-  el(
+// With a slideshow the frame can't be the link (its buttons can't sit
+// inside a link), so the link covers the images, under the controls.
+const renderLinkFrame = ({url, title, images, settings, openLabel}) => {
+  const link = {href: url, target: '_blank', rel: 'noopener'};
+  if (images.length > 1) {
+    const cover = el('a', {class: 'embed-link embed-link-cover', ...link}, linkParts(title, openLabel));
+    return el('div', {class: 'embed-frame'}, createSlides({images, settings, over: cover}));
+  }
+  return el(
     'a',
-    {class: 'embed-frame embed-link', href: url, target: '_blank', rel: 'noopener'},
-    renderFallback(fallback, ui.embed.screenshotComing),
-    el('span', {class: 'btn btn-primary embed-load'}, openText(openLabel)),
-    el('span', {class: 'visually-hidden'}, ` ${title} (opens in a new tab)`),
+    {class: 'embed-frame embed-link', ...link},
+    renderFallback(images[0], ui.embed.screenshotComing),
+    linkParts(title, openLabel),
   );
+};
 
 // Takes a node's title plus its content fields. One of:
 //   link: 'https://…'             screenshot that opens the app in a new tab
 //   embed: 'https://…'            live: Load button + new-tab link
 //   embed: {placeholder: 'textile-contacts/public-map'}  pendingEmbed() (content/helpers.js): not public yet
 //   neither, with a fallback      license ended: fallback only
+// `fallback` is one image or a list (pageImages()); two or more make a
+// slideshow, set by `slides` over SLIDES_DEFAULTS (content/helpers.js).
 export const createEmbed = ({
   title,
   embed,
   link,
   fallback,
+  slides,
   tryThis,
   openLabel = ui.embed.open,
 }) => {
+  const images = imagesOf(fallback);
+  const settings = {...SLIDES_DEFAULTS, ...slides};
+
   if (link) {
     return el(
       'figure',
       {class: 'embed'},
-      renderLinkFrame({url: link, title, fallback, openLabel}),
+      renderLinkFrame({url: link, title, images, settings, openLabel}),
       tryThis && renderCaption(tryThis),
     );
   }
 
   const live = typeof embed === 'string';
-  const frame = el(
-    'div',
-    {class: 'embed-frame'},
-    renderFallback(fallback, live ? ui.embed.screenshotComing : ui.embed.comingSoon),
-  );
-
-  if (live) {
-    const button = el(
+  const button =
+    live &&
+    el(
       'button',
       {class: 'btn btn-primary embed-load', type: 'button'},
       ui.embed.load,
     );
+  // A slideshow holds the button (above the images, under its controls);
+  // one image sits beside it in the frame, as before
+  const frame =
+    images.length > 1
+      ? el('div', {class: 'embed-frame'}, createSlides({images, settings, over: button}))
+      : el(
+          'div',
+          {class: 'embed-frame'},
+          renderFallback(images[0], live ? ui.embed.screenshotComing : ui.embed.comingSoon),
+          button,
+        );
+
+  if (button) {
     button.addEventListener('click', () => {
       const iframe = renderIframe(embed, title);
+      // Replaces the slideshow too, which stops its autoplay
       frame.replaceChildren(iframe);
       // The button just left the page; without this, focus falls back
       // to <body> and keyboard users lose their place.
       iframe.focus();
     });
-    frame.append(button);
   }
 
   const caption =

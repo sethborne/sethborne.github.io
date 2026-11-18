@@ -21,7 +21,8 @@ export const labelFor = (facet, id) =>
   LABELS.get(`${facet}:${id}`) ?? id;
 
 // A page's own image: its card thumb, else its preview screenshot
-const imageOf = (node) => node.thumb ?? node.content?.fallback;
+// A fallback list (a frame slideshow) gives the card its first image
+const imageOf = (node) => node.thumb ?? [node.content?.fallback].flat()[0];
 
 // What a card shows, first that exists (ARCHITECTURE.md → Card images):
 //   {photo}  the node's own image. Groups never borrow a child's: its
