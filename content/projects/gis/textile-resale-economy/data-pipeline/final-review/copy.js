@@ -6,4 +6,5 @@
 export default {
   title: 'Final Review',
   summary: 'Browser tool for checking every record against Google Maps and saving it as Keep or Remove. An optional scraper fetches each place’s current status, so closed places and poor matches come up first.',
+  cardSummary: 'Browser tool for checking every record against Google Maps, with closed places and poor matches first.',
 };

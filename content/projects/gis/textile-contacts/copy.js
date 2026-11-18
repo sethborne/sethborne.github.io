@@ -6,6 +6,7 @@
 export default {
   title: 'Washington Textile Survey and Map Tools',
   summary: 'A Survey123 form collecting contact details from people in the secondary textile resale economy, focused on Washington State. It feeds two Experience Builder apps: a public map of submissions and a staff app for managing them. Demo mockups of production work for the Recycling Market Development Center.',
+  cardSummary: 'A Survey123 form and two Experience Builder apps for mapping Washington’s textile resale economy. Demos of work for the RMDC.',
   linksTitle: 'Live Links on the RMDC Website',
   links: [
     {

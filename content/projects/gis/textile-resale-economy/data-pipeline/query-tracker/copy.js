@@ -6,4 +6,5 @@
 export default {
   title: 'Query Edit Tracker',
   summary: 'Log of every manual include and exclude edit to the pipeline queries, with record counts from each run (raw, candidates, cache removals, final output) charted over time.',
+  cardSummary: 'Log of every manual query edit, with record counts from each pipeline run charted over time.',
 };
