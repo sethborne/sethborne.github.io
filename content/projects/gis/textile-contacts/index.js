@@ -13,6 +13,11 @@ import reviewApp from './review-app/index.js';
 // Children in card order. The demos on the app pages are my AGOL
 // mockups; the links in the doc go to RMDC's production versions.
 export default fromCopy(copy).groupPage('textile-contacts', [surveyForm, publicMap, reviewApp], {
+  // The project card's image: the Public App's first screenshot, reused
+  // from its folder (no copy). A group normally keeps to its own thumb,
+  // since its page shows that child's card too; here the map is the
+  // project's best picture
+  thumb: publicMap.content.fallback[0],
   // Where the TL;DR goes on desktop: 'right' (default), 'left' or
   // 'full' (no column). See LAYOUTS in components/page/page.js.
   layout: 'full',
