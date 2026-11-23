@@ -19,6 +19,8 @@
 
   --nav-height: 64px;
   --max-width: 1080px;
+  /* A page's reading column: head, TL;DR box, story, picture frames */
+  --text-width: 720px;
 
   /* Space between the header and a page's breadcrumb. The breadcrumb
      bar uses it too, so its trail sits exactly where the page's did. */

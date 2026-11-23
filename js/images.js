@@ -9,6 +9,9 @@ const fileFor = (base, width, ext) => `${base}_${width}.${ext}`;
 export const srcsetFor = ({base, widths, ext = 'jpg'}) =>
   widths.map((width) => `${fileFor(base, width, ext)} ${width}w`).join(', ');
 
+// The largest file: a View Full Size link's target.
+export const largestFor = ({base, widths, ext = 'jpg'}) => fileFor(base, widths.at(-1), ext);
+
 // Fallback src for browsers without srcset: the middle size.
 export const fallbackFor = ({base, widths, ext = 'jpg'}) =>
   fileFor(base, widths[Math.floor(widths.length / 2)], ext);

@@ -66,6 +66,7 @@ FIELDS = [
     # Optional: a shorter line for the page's cards (else they show Summary)
     ('Card Summary', 'cardSummary', 'text'),
     ('Try This', 'content.tryThis', 'text'),
+    ('Caption', 'content.caption', 'text'),
     ('Sections', 'sections', 'sections'),
     # The page's own gallery (content.gallery); a section's goes under it
     ('Gallery', 'gallery', 'titled'),
@@ -413,8 +414,8 @@ const KEYS = ['title', 'summary', 'cardSummary', 'linksTitle', 'links', 'writeup
 const pages = [];
 const walk = (node, path) => {
   const copy = Object.fromEntries(KEYS.filter((k) => node[k] !== undefined).map((k) => [k, node[k]]));
-  const {tryThis, openLabel} = node.content ?? {};
-  const content = Object.fromEntries(Object.entries({tryThis, openLabel}).filter(([, v]) => v !== undefined));
+  const {tryThis, caption, openLabel} = node.content ?? {};
+  const content = Object.fromEntries(Object.entries({tryThis, caption, openLabel}).filter(([, v]) => v !== undefined));
   if (Object.keys(content).length) copy.content = content;
   // A gallery's copy: each image's title and caption
   const captionsOf = (gallery) =>

@@ -38,6 +38,9 @@ export default {
     screenshotComing: 'Screenshot Coming',
     // Lead before a page's Try This caption
     tryThis: 'Try This',
+    // Under a picture frame (an image with no app behind it): opens the
+    // largest file in a new tab. The ↗ is always added
+    fullSize: 'View Full Size',
   },
   filterBar: {
     facets: {tool: 'Tool', type: 'Type'},
