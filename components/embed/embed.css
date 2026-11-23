@@ -89,6 +89,28 @@
   height: auto;
 }
 
+/* Picture frame: a photo or slide with no app behind it, at its own
+   shape. The data's `aspect` (inline style) wins over auto, so the
+   height is held before the image loads. It lines up with the text
+   column, since it belongs to the story; app frames stay full width */
+.embed:has(.embed-picture) {
+  max-width: var(--text-width);
+}
+
+.embed-picture {
+  aspect-ratio: auto;
+}
+
+.embed-picture .embed-fallback {
+  height: auto;
+  object-fit: contain;
+}
+
+.embed a.embed-picture:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
 .embed-link:hover .btn-primary {
   background: var(--accent-dim);
   border-color: var(--accent-dim);
@@ -112,10 +134,19 @@
   gap: 8px 24px;
 }
 
-.embed-try {
+.embed-try,
+.embed-note {
   margin: 0;
   font-size: 0.92rem;
   max-width: 640px;
+}
+
+/* A plain caption (doc: Caption) reads apart from the page text:
+   smaller and italic, near the size of View Full Size beside it. It
+   stays in Inter, since mono is for labels (tags, dates, nav) */
+.embed-note {
+  font-size: 0.82rem;
+  font-style: italic;
 }
 
 .embed-try strong {

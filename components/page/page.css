@@ -11,7 +11,7 @@
 
 .page-head {
   margin-bottom: 40px;
-  max-width: 720px;
+  max-width: var(--text-width);
 }
 
 .page h1 {
@@ -120,7 +120,7 @@
 
   /* Full width: the TL;DR box lines up with the story's width */
   .layout-full .page-aside {
-    max-width: 720px;
+    max-width: var(--text-width);
   }
 }
 
