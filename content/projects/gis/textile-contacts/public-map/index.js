@@ -2,7 +2,7 @@
 // #/textile-contacts/public-map. Copy: public-map.docx -> copy.js.
 // Screenshots: npm run page-images (raws in img/_raw/).
 
-import {EB_APP, PAGE_WIDTHS, fromCopy, pageImages} from '../../../../helpers.js';
+import {EB_APP, PAGE_WIDTHS, fromCopy, pageImages, qrCode} from '../../../../helpers.js';
 import {TYPE_WEB_APP} from '../../../../tags.js';
 import copy from './copy.js';
 
@@ -20,6 +20,7 @@ const TAKES = {
 export default fromCopy(copy).detailPage('public-map', [...EB_APP, TYPE_WEB_APP], {
   content: {
     link: 'https://experience.arcgis.com/experience/aab92662811240559c1feda55d70a53c',
+    qr: qrCode(import.meta.url),
     fallback: pageImages(import.meta.url, TAKES, PAGE_WIDTHS.preview),
   },
 });

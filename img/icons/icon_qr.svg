@@ -1,0 +1,2 @@
+<!-- QR icon after "Open on Your Phone" (embed.css): a CSS mask, so it takes the link color -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M1 1h6v6H1zM2.5 2.5v3h3v-3zM9 1h6v6H9zM10.5 2.5v3h3v-3zM1 9h6v6H1zM2.5 10.5v3h3v-3z" fill-rule="evenodd"/><rect x="9" y="9" width="2" height="2"/><rect x="13" y="9" width="2" height="2"/><rect x="11" y="11" width="2" height="2"/><rect x="9" y="13" width="2" height="2"/><rect x="13" y="13" width="2" height="2"/></svg>

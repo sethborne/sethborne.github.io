@@ -2,7 +2,7 @@
 // #/textile-contacts/survey-form. Copy: survey-form.docx -> copy.js.
 // Screenshots: npm run page-images (raws in img/_raw/).
 
-import {PAGE_WIDTHS, fromCopy, pageImages} from '../../../../helpers.js';
+import {PAGE_WIDTHS, fromCopy, pageImages, qrCode} from '../../../../helpers.js';
 import {TOOL_ARCGIS_ONLINE, TOOL_SURVEY123, TYPE_FORM} from '../../../../tags.js';
 import copy from './copy.js';
 
@@ -17,6 +17,7 @@ const TAKES = {
 export default fromCopy(copy).detailPage('survey-form', [TOOL_SURVEY123, TOOL_ARCGIS_ONLINE, TYPE_FORM], {
   content: {
     link: 'https://survey123.arcgis.com/share/f2a1ae7b52074ba1a257ac3eef5d7bee',
+    qr: qrCode(import.meta.url),
     fallback: pageImages(import.meta.url, TAKES, PAGE_WIDTHS.preview),
   },
 });

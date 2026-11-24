@@ -104,6 +104,44 @@ const renderPicture = ({image, aspect}) => {
   };
 };
 
+// "Open on Your Phone": a link-styled button under the frame that opens
+// a small card with the app's QR code (qrCode() in content/helpers.js).
+// CSS shows it only with a mouse or trackpad at 1024px and up. The card
+// closes on a second click, Esc or a click anywhere else; Esc puts focus
+// back on the button. The listeners exist only while it's open, so a
+// page left behind leaves nothing running.
+let qrCount = 0;
+const renderQr = (qr, title) => {
+  const id = `embed-qr-${++qrCount}`;
+  const card = el(
+    'div',
+    {class: 'embed-qr-card', id, hidden: true},
+    // The SVG is a CSS mask over --ink, so the code takes the token color
+    el('span', {class: 'embed-qr-code', role: 'img', 'aria-label': `QR code for ${title}`, style: `--qr: url("${qr}")`}),
+    el('p', {}, ui.embed.qrText),
+  );
+  const button = el('button', {class: 'embed-qr-open', type: 'button', 'aria-expanded': 'false', 'aria-controls': id}, ui.embed.qrOpen);
+  const box = el('div', {class: 'embed-qr'}, button, card);
+
+  const onKey = (event) => {
+    if (event.key !== 'Escape') return;
+    show(false);
+    button.focus();
+  };
+  const onClick = (event) => {
+    if (!box.contains(event.target)) show(false);
+  };
+  const show = (open) => {
+    card.hidden = !open;
+    button.setAttribute('aria-expanded', String(open));
+    const listen = open ? document.addEventListener : document.removeEventListener;
+    listen.call(document, 'keydown', onKey);
+    listen.call(document, 'click', onClick);
+  };
+  button.addEventListener('click', () => show(card.hidden));
+  return box;
+};
+
 // Takes a node's title plus its content fields. One of:
 //   link: 'https://…'             screenshot that opens the app in a new tab
 //   embed: 'https://…'            live: Load button + new-tab link
@@ -121,11 +159,13 @@ export const createEmbed = ({
   tryThis,
   caption,
   aspect,
+  qr,
   openLabel = ui.embed.open,
 }) => {
   const images = imagesOf(fallback);
   const settings = {...SLIDES_DEFAULTS, ...slides};
   const words = {tryThis, caption};
+  const phone = qr && renderQr(qr, title);
 
   if (!embed && !link && images.length === 1) {
     const {frame, full} = renderPicture({image: images[0], aspect});
@@ -137,7 +177,7 @@ export const createEmbed = ({
       'figure',
       {class: 'embed'},
       renderLinkFrame({url: link, title, images, settings, openLabel}),
-      (tryThis || caption) && renderCaption(words),
+      (tryThis || caption || phone) && renderCaption(words, phone),
     );
   }
 
@@ -173,9 +213,10 @@ export const createEmbed = ({
   }
 
   const under =
-    (tryThis || caption || live) &&
+    (tryThis || caption || live || phone) &&
     renderCaption(
       words,
+      phone,
       live &&
         el(
           'a',

@@ -41,6 +41,10 @@ export default {
     // Under a picture frame (an image with no app behind it): opens the
     // largest file in a new tab. The ↗ is always added
     fullSize: 'View Full Size',
+    // Under an app's frame (with a mouse, 1024px and up): opens a card
+    // with the app's QR code
+    qrOpen: 'Open on Your Phone',
+    qrText: 'Scan with your phone’s camera to open the demo.',
   },
   filterBar: {
     facets: {tool: 'Tool', type: 'Type'},
