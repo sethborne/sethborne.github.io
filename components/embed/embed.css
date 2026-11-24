@@ -137,14 +137,11 @@
 .embed-try,
 .embed-note {
   margin: 0;
-  font-size: 0.92rem;
   max-width: 640px;
-}
-
-/* A plain caption (doc: Caption) reads apart from the page text:
-   smaller and italic, near the size of View Full Size beside it. It
-   stays in Inter, since mono is for labels (tags, dates, nav) */
-.embed-note {
+  /* Lines under a frame (Try This, a plain caption) read apart from the
+     page text: smaller and italic, near the size of View Full Size or
+     the new-tab link beside them. Inter, since mono is for labels (tags,
+     dates, nav); Try This keeps its bold lead */
   font-size: 0.82rem;
   font-style: italic;
 }
