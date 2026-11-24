@@ -185,6 +185,13 @@ export const pageImage = (here, name, alt, widths = PAGE_WIDTHS[name] ?? ALL_WID
 export const pageImages = (here, takes, widths) =>
   Object.entries(takes).map(([name, alt]) => pageImage(here, name, alt, widths));
 
+// A page's QR code (img/qr.svg in its folder, from npm run qr): an
+// "Open on Your Phone" link under the frame opens it in a small card,
+// with a mouse or trackpad at 1024px and up only (on a phone or tablet
+// you'd be scanning the screen you're holding).
+//   content: {link: 'https://...', qr: qrCode(import.meta.url)}
+export const qrCode = (here) => new URL('img/qr.svg', here).href;
+
 // Slideshow settings, for a page frame with two or more images (a
 // `fallback` list). A page overrides any of them beside its fallback,
 // `content: {fallback: [...], slides: {autoplay: false}}`; the embed

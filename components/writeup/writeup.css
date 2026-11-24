@@ -3,7 +3,7 @@
    =========================== */
 /* Layout (story beside the TL;DR on desktop) lives in page.css */
 .writeup-story {
-  max-width: 720px;
+  max-width: var(--text-width);
 }
 
 .writeup-story p {

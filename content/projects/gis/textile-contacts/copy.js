@@ -7,6 +7,9 @@ export default {
   title: 'Washington Textile Survey and Map Tools',
   summary: 'A Survey123 form collecting contact details from people in the secondary textile resale economy, focused on Washington State. It feeds two Experience Builder apps: a public map of submissions and a staff app for managing them. Demo mockups of production work for the Recycling Market Development Center.',
   cardSummary: 'A Survey123 form and two Experience Builder apps for mapping Washington’s textile resale economy. Demos of work for the RMDC.',
+  content: {
+    caption: 'The paper pin map from the RMDC symposium on May 14, 2026.',
+  },
   linksTitle: 'Live Links on the RMDC Website',
   links: [
     {
@@ -35,7 +38,7 @@ export default {
       'ArcGIS Enterprise Portal',
     ],
     situation: [
-      'The Recycling Market Development Center (RMDC) is a collaboration between the Washington State Departments of Ecology and Commerce, and the client for our capstone. At its symposium on May 14, 2026, the sign-in table had a paper map of Washington. Each attendee added a pin, colored by their role in the textile resale economy.',
+      'The Recycling Market Development Center (RMDC), a collaboration between the Washington State Departments of Ecology and Commerce, was the client for our capstone. At its symposium on May 14, 2026, attendees pinned their role on a paper map at the sign-in table (above): 50 pins from 9 of Washington’s 39 counties, a useful snapshot of one room on one day.',
       'Our project sponsor had just seen the Experience Builder app from our capstone and asked whether we could do the same for that map. We had covered Survey123 in class the week before, so I asked for a few weeks: I had an idea.',
     ],
     task: 'Turn a one-day paper map into a directory that keeps growing. Anyone in the textile resale economy can add themselves, anyone can find contacts near them, and Ecology staff decide what goes public.',

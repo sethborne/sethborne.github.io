@@ -89,6 +89,28 @@
   height: auto;
 }
 
+/* Picture frame: a photo or slide with no app behind it, at its own
+   shape. The data's `aspect` (inline style) wins over auto, so the
+   height is held before the image loads. It lines up with the text
+   column, since it belongs to the story; app frames stay full width */
+.embed:has(.embed-picture) {
+  max-width: var(--text-width);
+}
+
+.embed-picture {
+  aspect-ratio: auto;
+}
+
+.embed-picture .embed-fallback {
+  height: auto;
+  object-fit: contain;
+}
+
+.embed a.embed-picture:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
 .embed-link:hover .btn-primary {
   background: var(--accent-dim);
   border-color: var(--accent-dim);
@@ -112,10 +134,16 @@
   gap: 8px 24px;
 }
 
-.embed-try {
+.embed-try,
+.embed-note {
   margin: 0;
-  font-size: 0.92rem;
   max-width: 640px;
+  /* Lines under a frame (Try This, a plain caption) read apart from the
+     page text: smaller and italic, near the size of View Full Size or
+     the new-tab link beside them. Inter, since mono is for labels (tags,
+     dates, nav); Try This keeps its bold lead */
+  font-size: 0.82rem;
+  font-style: italic;
 }
 
 .embed-try strong {
@@ -126,4 +154,87 @@
   font-family: var(--font-mono);
   font-size: 0.78rem;
   letter-spacing: 0.02em;
+}
+
+/* "Open on Your Phone" + its QR card (mocked in _mockups/qr-codes/,
+   look C). Only with a mouse or trackpad at 1024px and up: on a phone
+   or tablet you'd be scanning the screen you're holding, and a touch
+   screen at 1024px (a tablet on its side) is still a tablet. */
+.embed-qr {
+  display: none;
+  position: relative;
+  margin-left: auto;
+}
+
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .embed-qr {
+    display: block;
+  }
+}
+
+/* A button that reads like the new-tab link beside it, the QR icon on
+   its right (a mask, so it takes the text color) */
+.embed-qr-open {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.embed-qr-open:hover {
+  color: var(--accent-dim);
+}
+
+.embed-qr-open::after {
+  content: "";
+  display: inline-block;
+  width: 0.9em;
+  height: 0.9em;
+  margin-left: 8px;
+  vertical-align: -0.1em;
+  background: currentColor;
+  -webkit-mask: url("../../img/icons/icon_qr.svg") center / contain no-repeat;
+  mask: url("../../img/icons/icon_qr.svg") center / contain no-repeat;
+}
+
+/* The card opens above the link, right-aligned to it */
+.embed-qr-card {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  z-index: 5;
+  width: 220px;
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  text-align: center;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+}
+
+.embed-qr-card[hidden] {
+  display: none;
+}
+
+.embed-qr-card p {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+/* The code: its SVG as a mask over the ink color. A dark gray reads
+   fine for phone cameras; they need contrast, not pure black */
+.embed-qr-code {
+  display: block;
+  width: 160px;
+  aspect-ratio: 1;
+  background: var(--ink);
+  -webkit-mask: var(--qr) center / contain no-repeat;
+  mask: var(--qr) center / contain no-repeat;
 }
